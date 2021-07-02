@@ -42,7 +42,7 @@ change palette on the destroying pieces
 3) graphic is immediately changed for all connected tiles immediately for Y time (FLASHING) [DONE]
 4) graphic is changed to disappearing graphic for Y time
 5) tiles are made invisible and removed from the board
-6) 
+
 ===========
 
 update/fix timer function
