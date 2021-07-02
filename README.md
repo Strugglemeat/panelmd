@@ -1,7 +1,8 @@
 # panelmd
 panel de pon for mega drive - SGDK 1.62
 
-todo:
+***todo:***
+
 check Hori+Vert matches after gravity
 
 ===========
