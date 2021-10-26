@@ -14,7 +14,8 @@ static void clearGrid();
 static void checkMatchRow(u8 whichRow, u8 color);
 static void checkMatchColumn(u8 whichColumn, u8 color);
 static void renderScene();
-static void processDestroy();
+static void connectedTilesChangeGraphic();
+static void destroyTiles();
 
 #define borderIndex 1
 #define tileIndex 5
@@ -60,6 +61,8 @@ u8 flag_redraw;
 } Player;
 
 Player p1;
+
+u8 timer=0;
 
 static void clearGrid()//only called at initialization
 {
@@ -352,7 +355,7 @@ static void renderScene()
 	}
 	else if(p1.flag_redraw==3)//after a blank swap
 	{
-		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,2,2);
+		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
 		p1.flag_redraw=0;
 		updateBackground();
 	}
@@ -388,4 +391,8 @@ static void print_debug()
 	VDP_clearText(21,6,4);
 	sprintf(debug_string,"color:%d",p1.board[p1.xpos][p1.ypos]);
 	VDP_drawText(debug_string,16,6);
+
+	VDP_clearText(21,7,4);
+	sprintf(debug_string,"timer:%d",timer);
+	VDP_drawText(debug_string,16,7);
 }

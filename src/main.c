@@ -2,17 +2,24 @@
 #include <resources.h>
 #include "functions.h"
 
+u8 destroyTimer;
+u8 destroyCountGlobal;
+
+#define destroyDelay 30
+
 int main()
 {
 initialize();
 
 	while(1)
 	{
+		timer++;
 		handleInput();
-		if(p1.destroyIndex!=0)processDestroy();
+		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
+		if(destroyTimer==timer && destroyCountGlobal>0)destroyTiles();
 		SYS_doVBlankProcess();
 		renderScene();
-		//print_debug();
+		print_debug();
 	}
 
 	return(0);
@@ -46,7 +53,7 @@ static void handleInput()
 
 	if(((value1 & BUTTON_A) || value1 & BUTTON_C) && p1.hasSwitched==0)
 	{
-		VDP_clearText(14,13,20);//clears the debug text for matches
+		VDP_clearText(14,13,20);VDP_clearText(14,14,20);//clears the debug text for matches
 
 		p1.hasSwitched=1;
 
@@ -85,6 +92,8 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 	u8 gravityDoneFlag=0;
 	u8 hasGravity=0;
 
+u8 dropCheckX,dropCheckY;
+
 	do
 	{
 	hasGravity=0;
@@ -98,6 +107,9 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 					p1.board[gravX][gravY]=0;
 					gravityDoneFlag=1;
 					hasGravity++;
+
+					dropCheckX=gravX;
+					dropCheckY=gravY+1;
 				}
 			}
 		}
@@ -106,6 +118,17 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 	if(gravityDoneFlag>0)
 		{
 			p1.flag_redraw=1;
+
+			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]);
+
+			/*
+			sprintf(debug_string,"dcX:%d,dcY:%d",dropCheckX,dropCheckY);
+			VDP_drawText(debug_string,16,9);
+			sprintf(debug_string,"gravColor:%d",p1.board[dropCheckX][dropCheckY]);
+			VDP_drawText(debug_string,16,10);
+			*/
+
+			checkMatchColumn(dropCheckX,p1.board[dropCheckX][dropCheckY]);
 		}
 }
 
@@ -179,19 +202,39 @@ static void checkMatchColumn(u8 whichColumn, u8 color)//this is pulling colors f
 	}
 }
 
-static void processDestroy()
+static void connectedTilesChangeGraphic()
 {
-	VDP_clearText(14,13,20);
 	sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	VDP_drawText(debug_string,16,13);
+
+	u8 destroyCount=0;
 
 	do
 	{
 		if(p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
 		{//otherwise, it'll +6 the same tile twice if it's involved in both a hori and vert match
-			p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;		
+			p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic
+			destroyCount++;
 		}
 		p1.destroyIndex--;
-		p1.flag_redraw=1;
 	}while(p1.destroyIndex>0);
+
+	sprintf(debug_string,"%d pieces",destroyCount);
+	VDP_drawText(debug_string,16,14);
+
+	destroyTimer=timer+destroyDelay;
+	destroyCountGlobal=destroyCount;
+}
+
+static void destroyTiles()
+{
+	while(destroyCountGlobal>0)
+	{
+		p1.board[p1.destroyX[destroyCountGlobal]][p1.destroyY[destroyCountGlobal]]=0;
+		destroyCountGlobal--;
+	}
+
+	p1.flag_redraw=1;
+	doGravity(0);
+	destroyTimer=0;
 }
