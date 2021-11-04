@@ -18,8 +18,9 @@ initialize();
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer==timer && destroyCountGlobal>0)destroyTiles();
 		SYS_doVBlankProcess();
-		renderScene();
-		print_debug();
+		if(p1.flag_redraw!=0)renderScene();
+		sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
+		//print_debug();
 	}
 
 	return(0);
@@ -39,21 +40,50 @@ static void handleInput()
 	if(p1.moveDelay>0)p1.moveDelay--;
 	else if(p1.moveDelay==0)
 	{
-	    if ((value1 & BUTTON_LEFT) && p1.xpos>1)   {p1.xpos--;p1.moveDelay=moveDelayAmt-p1.acceleration;p1.lastDirInput=value1;p1.cursorX-=blocksize;updateSprites();}
-	    if ((value1 & BUTTON_RIGHT) && p1.xpos < maxX-1)   {p1.xpos++;p1.moveDelay=moveDelayAmt-p1.acceleration;p1.lastDirInput=value1;p1.cursorX+=blocksize;updateSprites();}
-	    if ((value1 & BUTTON_UP) && p1.ypos>1)      {p1.ypos--;p1.moveDelay=moveDelayAmt-p1.acceleration;p1.lastDirInput=value1;p1.cursorY-=blocksize;updateSprites();}//1,1 is the bottom left...
-	    if ((value1 & BUTTON_DOWN) && p1.ypos<maxY)    {p1.ypos++;p1.moveDelay=moveDelayAmt-p1.acceleration;p1.lastDirInput=value1;p1.cursorY+=blocksize;updateSprites();}
+	    if ((value1 & BUTTON_LEFT) && p1.xpos>1)   
+		    {
+		    	p1.xpos--;
+		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
+		    	p1.lastDirInput=value1;
+		    	p1.cursorX-=blocksize;
+		    	updateSprites();
+		    }
+	    if ((value1 & BUTTON_RIGHT) && p1.xpos < maxX-1)   
+		    {
+		    	p1.xpos++;
+		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
+		    	p1.lastDirInput=value1;
+		    	p1.cursorX+=blocksize;
+		    	updateSprites();
+		    }
+	    if ((value1 & BUTTON_UP) && p1.ypos>1)      
+		    {
+			    p1.ypos--;
+			    p1.moveDelay=moveDelayAmt-p1.acceleration;
+			    p1.lastDirInput=value1;
+			    p1.cursorY-=blocksize;
+			    updateSprites();
+		    }//1,1 is the bottom left...
+	    if ((value1 & BUTTON_DOWN) && p1.ypos<maxY)    
+		    {
+		    	p1.ypos++;
+		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
+		    	p1.lastDirInput=value1;
+		    	p1.cursorY+=blocksize;
+		    	updateSprites();
+		    }
    	}
 
 	if(p1.raiseDelay>0)p1.raiseDelay--;
-	else if (p1.raiseDelay==0)
+	else if (checkTopRow()==0 && p1.raiseDelay==0 && (value1 & BUTTON_B))
 	{
-		if(value1 & BUTTON_B){if(checkTopRow()==0)generateNewRow();p1.raiseDelay=raiseDelayAmount;}
+		generateNewRow();
+		p1.raiseDelay=raiseDelayAmount;
 	}
 
 	if(((value1 & BUTTON_A) || value1 & BUTTON_C) && p1.hasSwitched==0)
 	{
-		VDP_clearText(14,13,20);VDP_clearText(14,14,20);//clears the debug text for matches
+		//VDP_clearText(14,13,20);VDP_clearText(14,14,20);//clears the debug text for matches
 
 		p1.hasSwitched=1;
 
@@ -204,8 +234,8 @@ static void checkMatchColumn(u8 whichColumn, u8 color)//this is pulling colors f
 
 static void connectedTilesChangeGraphic()
 {
-	sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
-	VDP_drawText(debug_string,16,13);
+	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
+	//VDP_drawText(debug_string,16,13);
 
 	u8 destroyCount=0;
 
@@ -219,8 +249,8 @@ static void connectedTilesChangeGraphic()
 		p1.destroyIndex--;
 	}while(p1.destroyIndex>0);
 
-	sprintf(debug_string,"%d pieces",destroyCount);
-	VDP_drawText(debug_string,16,14);
+	//sprintf(debug_string,"%d pieces",destroyCount);
+	//VDP_drawText(debug_string,16,14);
 
 	destroyTimer=timer+destroyDelay;
 	destroyCountGlobal=destroyCount;

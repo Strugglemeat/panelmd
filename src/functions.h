@@ -20,7 +20,7 @@ static void destroyTiles();
 #define borderIndex 1
 #define tileIndex 5
 
-#define maxX 6
+#define maxX 18//6 for regular
 #define maxY 12
 #define blocksize 16
 #define p1boardstartX 16
@@ -37,11 +37,11 @@ enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 
 char debug_string[40] = "";
 
-u8 numColors=5;//if 6 it includes the dark blue tile
+u8 numColors=6;//if 6 it includes the dark blue tile
 
 typedef struct {
 Sprite* cursor;
-u8 cursorX,cursorY;
+u16 cursorX,cursorY;//changed from u8 to u16 to accommodate larger playfield
 u8 xpos,ypos;
 
 u8 moveDelay,acceleration;
@@ -89,8 +89,8 @@ static void drawBorder()//only called at initialization
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 0, iY, 2, 2);
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 38, iY, 2, 2);
 
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 14, iY, 2, 2);
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 24, iY, 2, 2);
+		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 14, iY, 2, 2);
+		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 24, iY, 2, 2);
 	}
 }
 
@@ -124,14 +124,14 @@ VDP_setPalette(PAL1, cursor.palette->data);
 //VDP_setPalette(PAL2, bgtile.palette->data);
 VDP_loadTileSet(bgtile.tileset,borderIndex,DMA);
 
+drawBorder();
+
 //tiles
 VDP_setPalette(PAL3, alltiles.palette->data);
 VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
 VDP_setPalette(PAL2, modtiles.palette->data);
 
-drawBorder();
-
-clearGrid();
+//clearGrid();
 
 insertInitialRowData();
 updateBackground();
@@ -330,7 +330,6 @@ static void updateBackground()
 				drawTile(iX,iY,p1.board[iX][iY]);
 				}
 			}
-
 		}
 }
 
@@ -344,21 +343,19 @@ static void renderScene()
 {
 	if(p1.flag_redraw==1)//do the whole scene
 	{
-		VDP_clearTileMapRect(BG_A,2,2,12,24);//clears the entire P1 board
-		p1.flag_redraw=0;
-		updateBackground();
+		//VDP_clearTileMapRect(BG_A,2,2,12,24);//clears the entire P1 board
+		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
 	}
-	else if(p1.flag_redraw==2)//after swapping two tiles
+	/*else if(p1.flag_redraw==2)//after swapping two tiles
 	{
-		p1.flag_redraw=0;
 		updateBackground();
-	}
+	}*/
 	else if(p1.flag_redraw==3)//after a blank swap
 	{
 		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-		p1.flag_redraw=0;
-		updateBackground();
 	}
+	p1.flag_redraw=0;
+	updateBackground();
 }
 
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
