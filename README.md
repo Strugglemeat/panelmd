@@ -7,6 +7,10 @@ check Hori+Vert matches after gravity
 
 ===========
 
+new rows coming from bottom - need to check for (and correct) vertical matching (horizontal done)
+
+===========
+
 vscroll to raise stack rather than pop up a new row of tiles - smoother
 
 ===========
