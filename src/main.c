@@ -2,8 +2,10 @@
 #include <resources.h>
 #include "functions.h"
 
-u8 destroyTimer;
-u8 destroyCountGlobal;
+u8 destroyTimer[4];//4 timers (max 2 per player conns at any one time),16 tiles per conn, X and Y
+u8 toDestroyX[4][17];
+u8 toDestroyY[4][17];
+//u8 destroyCountGlobal[8];
 
 #define destroyDelay 30
 
@@ -16,14 +18,13 @@ initialize();
 		timer++;
 		handleInput();
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
-		if(destroyTimer==timer && destroyCountGlobal>0)destroyTiles();
+		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
 		if(p1.flag_redraw!=0)renderScene();
 		sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
-		//print_debug();
+		print_debug();
 	}
-
-	return(0);
+return 0;
 }
 
 static void handleInput()
@@ -122,7 +123,7 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 	u8 gravityDoneFlag=0;
 	u8 hasGravity=0;
 
-u8 dropCheckX,dropCheckY;
+	u8 dropCheckX,dropCheckY;
 
 	do
 	{
@@ -237,14 +238,20 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	//VDP_drawText(debug_string,16,13);
 
-	u8 destroyCount=0;
+
+	//find the first open timer (there are 4 total destroyTimer[4])
+	u8 whichTimer=0;
+	while(destroyTimer[whichTimer]!=0)whichTimer++;
+	destroyTimer[whichTimer]=timer+destroyDelay;
+	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
 
 	do
 	{
 		if(p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
 		{//otherwise, it'll +6 the same tile twice if it's involved in both a hori and vert match
-			p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic
-			destroyCount++;
+			p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic		
+			toDestroyX[whichTimer][p1.destroyIndex]=p1.destroyX[p1.destroyIndex];
+			toDestroyY[whichTimer][p1.destroyIndex]=p1.destroyY[p1.destroyIndex];
 		}
 		p1.destroyIndex--;
 	}while(p1.destroyIndex>0);
@@ -252,19 +259,40 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d pieces",destroyCount);
 	//VDP_drawText(debug_string,16,14);
 
-	destroyTimer=timer+destroyDelay;
-	destroyCountGlobal=destroyCount;
 }
 
 static void destroyTiles()
 {
-	while(destroyCountGlobal>0)
+	u8 timerToUse=0;//the time to destroy is inside each of the members of the array
+	while(destroyTimer[timerToUse]==0)timerToUse++;
+
+	if(timer==destroyTimer[timerToUse])
 	{
-		p1.board[p1.destroyX[destroyCountGlobal]][p1.destroyY[destroyCountGlobal]]=0;
-		destroyCountGlobal--;
+		for (u8 incN=1;incN<MaxInOneMove;incN++)
+		{
+			p1.board[toDestroyX[timerToUse][incN]][toDestroyY[timerToUse][incN]]=0;
+		}
+		destroyTimer[timerToUse]=0;
+		p1.flag_redraw=1;
+		doGravity(0);
+	}
+}
+
+static void generateNewRow()
+{
+	for(u8 newX=1;newX<maxX+1;newX++)
+	{
+		p1.board[newX][maxY+1]=randomRange(1,numColors);
 	}
 
-	p1.flag_redraw=1;
-	doGravity(0);
-	destroyTimer=0;
+	for(u8 gencheckXinc=1;gencheckXinc<maxX+1;gencheckXinc++)
+		{
+			if(p1.board[gencheckXinc][maxY+1]==p1.board[gencheckXinc+1][maxY+1])
+				{
+					if(p1.board[gencheckXinc+1][maxY+1]<6)p1.board[gencheckXinc+1][maxY+1]++;
+					else if(p1.board[gencheckXinc+1][maxY+1]==6)p1.board[gencheckXinc+1][maxY+1]=1;
+				}
+		}
+//and we now need to manage the vertical matches of the newly created rows
+	pushupRows();
 }

@@ -20,7 +20,7 @@ static void destroyTiles();
 #define borderIndex 1
 #define tileIndex 5
 
-#define maxX 18//6 for regular
+#define maxX 18//6 for regular, 18 max
 #define maxY 12
 #define blocksize 16
 #define p1boardstartX 16
@@ -32,6 +32,8 @@ static void destroyTiles();
 #define accelerationPace 4//lower is faster
 #define accelerationAmount 2//higher is faster
 #define raiseDelayAmount 12//lower is faster
+
+#define MaxInOneMove 16
 
 enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 
@@ -50,8 +52,8 @@ u8 lastDirInputHowMany;
 u8 raiseDelay;
 
 u8 destroyIndex;
-u8 destroyX[17];
-u8 destroyY[17];//max 16 destroyed in one move - 0 of index isn't used
+u8 destroyX[MaxInOneMove+1];
+u8 destroyY[MaxInOneMove+1];//max 16 destroyed in one move - 0 of index isn't used
 
 u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at [1][1] for bottom left corner
 
@@ -131,7 +133,7 @@ VDP_setPalette(PAL3, alltiles.palette->data);
 VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
 VDP_setPalette(PAL2, modtiles.palette->data);
 
-//clearGrid();
+clearGrid();
 
 insertInitialRowData();
 updateBackground();
@@ -269,30 +271,6 @@ static u8 checkTopRow()
 	else return 0;
 }
 
-static void generateNewRow()
-{
-	for(u8 newX=1;newX<maxX+1;newX++)
-	{
-		p1.board[newX][maxY+1]=randomRange(1,numColors);
-	}
-//later on, change this to a do while, and do a check for matches in the new row
-/*
-	if((p1.board[1][maxY+1]==p1.board[2][maxY+1]) && (p1.board[1][maxY+1]==p1.board[3][maxY+1])){p1.board[1][maxY+1]=1;p1.board[3][maxY+1]=2;}
-
-	if((p1.board[4][maxY+1]==p1.board[5][maxY+1]) && (p1.board[4][maxY+1]==p1.board[6][maxY+1])){p1.board[4][maxY+1]=3;p1.board[6][maxY+1]=5;}
-
-	if(p1.board[2][maxY+1]==p1.board[3][maxY+1] && p1.board[2][maxY+1]!=1)p1.board[3][maxY+1]=1;
-
-	if(p1.board[4][maxY+1]==p1.board[5][maxY+1] && p1.board[4][maxY+1]<3)p1.board[5][maxY+1]=4;
-	else if(p1.board[4][maxY+1]==p1.board[5][maxY+1] && p1.board[4][maxY+1]>=3)p1.board[5][maxY+1]=2;
-
-	if(p1.board[3][maxY+1]==p1.board[4][maxY+1] && p1.board[3][maxY+1]<4)p1.board[4][maxY+1]=5;
-	else if(p1.board[3][maxY+1]==p1.board[4][maxY+1] && p1.board[3][maxY+1]>=4)p1.board[4][maxY+1]=3;
-
-	if(p1.board[5][maxY+1]==p1.board[6][maxY+1] && p1.board[5][maxY+1]>1)p1.board[5][maxY+1]=1;
-*/
-	pushupRows();
-}
 
 static void pushupRows()
 {
@@ -364,17 +342,17 @@ static u8 randomRange(u8 rangeStart, u8 rangeEnd)
 }
 
 static void print_debug()
-{
+{/*
 	if(SYS_getFPS()<60)
 	{
 		sprintf(debug_string,"FPS:%ld", SYS_getFPS());
 		VDP_drawText(debug_string,34,0);
 	}
-	else VDP_clearText(34,0,6);
+	else VDP_clearText(34,0,6);*/
 
-	sprintf(debug_string,"player1");
-	VDP_drawText(debug_string,16,2);
-
+	//sprintf(debug_string,"player1");
+	//VDP_drawText(debug_string,16,2);
+/*
 	sprintf(debug_string,"crsrX:%d",p1.xpos);
 	VDP_drawText(debug_string,16,3);
 
@@ -385,11 +363,11 @@ static void print_debug()
 	sprintf(debug_string,"accel:%d",p1.acceleration);
 	VDP_drawText(debug_string,16,5);
 
-	VDP_clearText(21,6,4);
+	VDP_clearText(21,2,4);
 	sprintf(debug_string,"color:%d",p1.board[p1.xpos][p1.ypos]);
-	VDP_drawText(debug_string,16,6);
-
-	VDP_clearText(21,7,4);
+	VDP_drawText(debug_string,16,2);
+*/
+	VDP_clearText(21,2,8);
 	sprintf(debug_string,"timer:%d",timer);
-	VDP_drawText(debug_string,16,7);
+	VDP_drawText(debug_string,16,2);
 }
