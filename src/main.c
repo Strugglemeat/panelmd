@@ -151,15 +151,14 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 			p1.flag_redraw=1;
 
 			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]);
-
-			/*
+			checkMatchColumn(dropCheckX,p1.board[dropCheckX][dropCheckY]);
+			
 			sprintf(debug_string,"dcX:%d,dcY:%d",dropCheckX,dropCheckY);
-			VDP_drawText(debug_string,16,9);
+			VDP_drawText(debug_string,0,0);
+			/*
 			sprintf(debug_string,"gravColor:%d",p1.board[dropCheckX][dropCheckY]);
 			VDP_drawText(debug_string,16,10);
 			*/
-
-			checkMatchColumn(dropCheckX,p1.board[dropCheckX][dropCheckY]);
 		}
 }
 
@@ -238,13 +237,10 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	//VDP_drawText(debug_string,16,13);
 
-
 	//find the first open timer (there are 4 total destroyTimer[4])
 	u8 whichTimer=0;
 	while(destroyTimer[whichTimer]!=0)whichTimer++;
-	destroyTimer[whichTimer]=timer+destroyDelay;
-	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
-
+	
 	do
 	{
 		if(p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
@@ -255,6 +251,10 @@ static void connectedTilesChangeGraphic()
 		}
 		p1.destroyIndex--;
 	}while(p1.destroyIndex>0);
+
+	destroyTimer[whichTimer]=timer+destroyDelay;
+	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
+
 
 	//sprintf(debug_string,"%d pieces",destroyCount);
 	//VDP_drawText(debug_string,16,14);
@@ -270,7 +270,10 @@ static void destroyTiles()
 	{
 		for (u8 incN=1;incN<MaxInOneMove;incN++)
 		{
+			if(toDestroyX[timerToUse][incN]==0)break;
 			p1.board[toDestroyX[timerToUse][incN]][toDestroyY[timerToUse][incN]]=0;
+			toDestroyX[timerToUse][incN]=0;
+			toDestroyY[timerToUse][incN]=0;
 		}
 		destroyTimer[timerToUse]=0;
 		p1.flag_redraw=1;

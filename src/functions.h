@@ -82,14 +82,14 @@ static void drawBorder()//only called at initialization
 	u8 iX,iY;
 	for(iX=0;iX<40;iX+=2)//top and bottom rows
 	{
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), iX, 0, 2, 2);
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), iX, 26, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), iX, 0, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), iX, 26, 2, 2);
 	}
 
 	for(iY=2;iY<25;iY+=2)//left and right sides, inner walls
 	{
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 0, iY, 2, 2);
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 38, iY, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 0, iY, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 38, iY, 2, 2);
 
 		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 14, iY, 2, 2);
 		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 24, iY, 2, 2);
@@ -123,7 +123,7 @@ VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
 VDP_setPalette(PAL1, cursor.palette->data);
 
 //border
-//VDP_setPalette(PAL2, bgtile.palette->data);
+VDP_setPalette(PAL2, bgtile.palette->data);
 VDP_loadTileSet(bgtile.tileset,borderIndex,DMA);
 
 drawBorder();
@@ -131,7 +131,7 @@ drawBorder();
 //tiles
 VDP_setPalette(PAL3, alltiles.palette->data);
 VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
-VDP_setPalette(PAL2, modtiles.palette->data);
+//VDP_setPalette(PAL2, modtiles.palette->data);//change this to use highlight/shadow instead of a new palette
 
 clearGrid();
 
@@ -139,11 +139,11 @@ insertInitialRowData();
 updateBackground();
 
 sprintf(debug_string,"press B");
-VDP_drawText(debug_string,3,8);
+VDP_drawText(debug_string,12,8);
 sprintf(debug_string,"to raise");
-VDP_drawText(debug_string,3,9);
+VDP_drawText(debug_string,12,9);
 sprintf(debug_string,"the stack");
-VDP_drawText(debug_string,3,10);
+VDP_drawText(debug_string,12,10);
 
 SYS_enableInts();
 
@@ -156,7 +156,10 @@ p1.ypos=maxY;
 p1.cursorX=p1boardstartX+((p1.xpos-1)*blocksize)-2;
 p1.cursorY=boardstartY+((p1.ypos-1)*blocksize)-2;
 
+VDP_setHilightShadow(1);
+
 SPR_setVisibility(p1.cursor,VISIBLE);
+SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
 updateSprites();//has SPR_Update() in it
 
 p1.flag_redraw=0;
@@ -167,94 +170,94 @@ static void drawTile(u8 x, u8 y, u8 color)
 	switch(color)
 	{//enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 		case Red:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color-1), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color-1), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color-1), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color-1), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color-1), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color-1), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color-1), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color-1), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Purple:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Yellow:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+1), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+1), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+1), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+1), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+1), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+1), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+1), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+1), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Green:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+2), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+2), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+2), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+2), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+2), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+2), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+2), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+2), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Blue:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+3), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+3), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+3), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+3), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+3), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+3), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+3), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+3), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Darkblue:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+4), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+4), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+4), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+4), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+4), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+4), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+4), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+4), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Red+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color-1-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color-1-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color-1-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color-1-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color-1-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color-1-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color-1-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color-1-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Purple+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Yellow+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color+1-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color+1-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color+1-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color+1-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+1-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+1-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+1-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+1-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Green+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color+2-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color+2-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color+2-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color+2-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+2-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+2-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+2-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+2-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Blue+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color+3-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color+3-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color+3-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color+3-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+3-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+3-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+3-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+3-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Darkblue+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+color+4-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+1+color+4-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+12+color+4-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, tileIndex+13+color+4-6), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+4-6), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+4-6), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+4-6), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+4-6), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case 255:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, 0), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, 0), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, 0), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, 0), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x+1, y+y+1, 1, 1);
 		break;
 	}
 }
@@ -352,22 +355,23 @@ static void print_debug()
 
 	//sprintf(debug_string,"player1");
 	//VDP_drawText(debug_string,16,2);
-/*
+
+	if(p1.xpos<10)VDP_clearText(15,1,1);
 	sprintf(debug_string,"crsrX:%d",p1.xpos);
-	VDP_drawText(debug_string,16,3);
+	VDP_drawText(debug_string,8,1);
 
-	if(p1.ypos<10)VDP_clearText(23,4,1);
+	if(p1.ypos<10)VDP_clearText(23,1,1);
 	sprintf(debug_string,"crsrY:%d",p1.ypos);
-	VDP_drawText(debug_string,16,4);
-
+	VDP_drawText(debug_string,16,1);
+/*
 	sprintf(debug_string,"accel:%d",p1.acceleration);
 	VDP_drawText(debug_string,16,5);
 
 	VDP_clearText(21,2,4);
 	sprintf(debug_string,"color:%d",p1.board[p1.xpos][p1.ypos]);
 	VDP_drawText(debug_string,16,2);
-*/
+
 	VDP_clearText(21,2,8);
 	sprintf(debug_string,"timer:%d",timer);
-	VDP_drawText(debug_string,16,2);
+	VDP_drawText(debug_string,16,2);*/
 }
