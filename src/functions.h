@@ -66,6 +66,9 @@ Player p1;
 
 u8 timer=0;
 
+u8 redraw_delay=0;
+#define REDRAW_DELAY_AMOUNT 8
+
 static void clearGrid()//only called at initialization
 {
 	for(u8 clearY=maxY;clearY>0;clearY--)
@@ -98,19 +101,13 @@ static void drawBorder()//only called at initialization
 
 static void insertInitialRowData()//only called at initialization
 {
-	//p1board[1][1]=2;
-	//p1board[2][1]=3;
-	//p1board[3][1]=4;
-	//p1board[4][1]=5;
-	//p1board[5][1]=6;
-
-	p1.board[6][maxY-2]=3;
-	p1.board[6][maxY-1]=2;
-	p1.board[2][maxY]=2;
-	p1.board[3][maxY]=1;
-	p1.board[4][maxY]=2;
-	p1.board[5][maxY]=1;
-	p1.board[6][maxY]=1;
+	p1.board[6][maxY-2]=randomRange(1,numColors);
+	p1.board[6][maxY-1]=randomRange(1,numColors);
+	p1.board[2][maxY]=randomRange(1,numColors);
+	p1.board[3][maxY]=randomRange(1,numColors);
+	p1.board[4][maxY]=randomRange(1,numColors);
+	p1.board[5][maxY]=randomRange(1,numColors);
+	p1.board[6][maxY]=randomRange(1,numColors);
 }
 
 static void initialize()
@@ -262,38 +259,6 @@ static void drawTile(u8 x, u8 y, u8 color)
 	}
 }
 
-static u8 checkTopRow()
-{
-	u8 emptyCheck=0;
-		for(u8 xPos=1;xPos<maxX+1;xPos++)
-		{
-			if(p1.board[xPos][1]>0)emptyCheck=1;
-		}
-
-	if(emptyCheck>0)return 1;
-	else return 0;
-}
-
-
-static void pushupRows()
-{
-	for(u8 yPos=1;yPos<maxY+1;yPos++)
-	{
-		for(u8 xPos=1;xPos<maxX+1;xPos++)
-		{
-			p1.board[xPos][yPos]=p1.board[xPos][yPos+1];
-		}
-	}
-
-	p1.flag_redraw=1;
-/*
-	for(u8 x=1;x<maxX;x++)
-	{
-		if(p1.board[x][maxY]==p1.board[x][maxY-1]){checkMatchColumn(x, p1.board[x][maxY]);}
-	}
-*/
-}
-
 //static void updateBackground(u8 yStart, u8 yEnd)
 static void updateBackground()
 {
@@ -314,29 +279,68 @@ static void updateBackground()
 		}
 }
 
+static void renderScene()
+{
+	if(p1.flag_redraw==1)//redraw the entire scene
+	{
+		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
+		p1.flag_redraw=0;
+		updateBackground();
+	}
+	else if(p1.flag_redraw==2)//after a blank swap or regular swap
+	{
+		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
+		
+		//p1.flag_redraw=0;
+		//updateBackground();
+		
+		p1.flag_redraw=3;
+		redraw_delay=REDRAW_DELAY_AMOUNT;
+	}
+	else if(p1.flag_redraw==3 && redraw_delay==0)
+	{
+		p1.flag_redraw=0;
+		updateBackground();
+	}
+	//p1.flag_redraw=0;
+	//updateBackground();
+}
+
+static u8 checkTopRow()
+{
+	u8 emptyCheck=0;
+		for(u8 xPos=1;xPos<maxX+1;xPos++)
+		{
+			if(p1.board[xPos][1]>0)emptyCheck=1;
+		}
+
+	if(emptyCheck>0)return 1;
+	else return 0;
+}
+
+static void pushupRows()
+{
+	for(u8 yPos=1;yPos<maxY+1;yPos++)
+	{
+		for(u8 xPos=1;xPos<maxX+1;xPos++)
+		{
+			p1.board[xPos][yPos]=p1.board[xPos][yPos+1];
+		}
+	}
+
+	p1.flag_redraw=1;
+/*
+	for(u8 x=1;x<maxX;x++)
+	{
+		if(p1.board[x][maxY]==p1.board[x][maxY-1]){checkMatchColumn(x, p1.board[x][maxY]);}
+	}
+*/
+}
+
 static void updateSprites()
 {
     SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
 	SPR_update();
-}
-
-static void renderScene()
-{
-	if(p1.flag_redraw==1)//do the whole scene
-	{
-		//VDP_clearTileMapRect(BG_A,2,2,12,24);//clears the entire P1 board
-		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
-	}
-	/*else if(p1.flag_redraw==2)//after swapping two tiles
-	{
-		updateBackground();
-	}*/
-	else if(p1.flag_redraw==3)//after a blank swap
-	{
-		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-	}
-	p1.flag_redraw=0;
-	updateBackground();
 }
 
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
@@ -353,16 +357,13 @@ static void print_debug()
 	}
 	else VDP_clearText(34,0,6);*/
 
-	//sprintf(debug_string,"player1");
-	//VDP_drawText(debug_string,16,2);
-
-	if(p1.xpos<10)VDP_clearText(15,1,1);
+	if(p1.xpos<10)VDP_clearText(7,1,1);
 	sprintf(debug_string,"crsrX:%d",p1.xpos);
-	VDP_drawText(debug_string,8,1);
+	VDP_drawText(debug_string,0,1);
 
-	if(p1.ypos<10)VDP_clearText(23,1,1);
+	if(p1.ypos<10)VDP_clearText(15,1,1);
 	sprintf(debug_string,"crsrY:%d",p1.ypos);
-	VDP_drawText(debug_string,16,1);
+	VDP_drawText(debug_string,8,1);
 /*
 	sprintf(debug_string,"accel:%d",p1.acceleration);
 	VDP_drawText(debug_string,16,5);
@@ -374,4 +375,6 @@ static void print_debug()
 	VDP_clearText(21,2,8);
 	sprintf(debug_string,"timer:%d",timer);
 	VDP_drawText(debug_string,16,2);*/
+
+	sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
 }

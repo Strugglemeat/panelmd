@@ -5,9 +5,8 @@
 u8 destroyTimer[4];//4 timers (max 2 per player conns at any one time),16 tiles per conn, X and Y
 u8 toDestroyX[4][17];
 u8 toDestroyY[4][17];
-//u8 destroyCountGlobal[8];
 
-#define destroyDelay 30
+#define destroyDelay 32
 
 int main()
 {
@@ -16,12 +15,12 @@ initialize();
 	while(1)
 	{
 		timer++;
+		if(redraw_delay>0)redraw_delay--;
 		handleInput();
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
 		if(p1.flag_redraw!=0)renderScene();
-		sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
 		print_debug();
 	}
 return 0;
@@ -107,7 +106,7 @@ static void handleInput()
 
 		if(color1==0 || color2==0)//empty swap
 			{
-				p1.flag_redraw=3;
+				p1.flag_redraw=2;
 				//doGravity(p1.ypos-1);//this only sends downwards, not upwards. would be appropriate for switching if there is nothing on top
 				doGravity(0);//this does the whole board
 			}
