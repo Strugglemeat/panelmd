@@ -8,6 +8,9 @@ u8 toDestroyY[4][17];
 
 #define destroyDelay 32
 
+u8 gravity_delay;
+#define GRAVITY_DELAY_AMOUNT 16
+
 int main()
 {
 initialize();
@@ -15,7 +18,9 @@ initialize();
 	while(1)
 	{
 		timer++;
-		if(redraw_delay>0)redraw_delay--;
+		if(p1.redraw_delay>0)p1.redraw_delay--;
+		if(gravity_delay==1)doGravity(0);
+		if(gravity_delay>0)gravity_delay--;
 		handleInput();
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
@@ -43,34 +48,42 @@ static void handleInput()
 	    if ((value1 & BUTTON_LEFT) && p1.xpos>1)   
 		    {
 		    	p1.xpos--;
+		    	p1.cursorX-=blocksize;
+
 		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
 		    	p1.lastDirInput=value1;
-		    	p1.cursorX-=blocksize;
-		    	updateSprites();
+			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+				SPR_update();
 		    }
 	    if ((value1 & BUTTON_RIGHT) && p1.xpos < maxX-1)   
 		    {
 		    	p1.xpos++;
+		    	p1.cursorX+=blocksize;
+
 		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
 		    	p1.lastDirInput=value1;
-		    	p1.cursorX+=blocksize;
-		    	updateSprites();
+			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+				SPR_update();
 		    }
 	    if ((value1 & BUTTON_UP) && p1.ypos>1)      
 		    {
 			    p1.ypos--;
+			    p1.cursorY-=blocksize;
+
 			    p1.moveDelay=moveDelayAmt-p1.acceleration;
 			    p1.lastDirInput=value1;
-			    p1.cursorY-=blocksize;
-			    updateSprites();
+			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+				SPR_update();
 		    }//1,1 is the bottom left...
 	    if ((value1 & BUTTON_DOWN) && p1.ypos<maxY)    
 		    {
 		    	p1.ypos++;
+		    	p1.cursorY+=blocksize;
+
 		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
 		    	p1.lastDirInput=value1;
-		    	p1.cursorY+=blocksize;
-		    	updateSprites();
+			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+				SPR_update();
 		    }
    	}
 
@@ -97,7 +110,7 @@ static void handleInput()
 			p1.board[p1.xpos+1][p1.ypos]=color1;
 
 			p1.flag_redraw=2;
-
+			
 			checkMatchRow(p1.ypos,color1);
 			checkMatchRow(p1.ypos,color2);
 			checkMatchColumn(p1.xpos,color2);
@@ -108,7 +121,9 @@ static void handleInput()
 			{
 				p1.flag_redraw=2;
 				//doGravity(p1.ypos-1);//this only sends downwards, not upwards. would be appropriate for switching if there is nothing on top
-				doGravity(0);//this does the whole board
+				gravity_delay=GRAVITY_DELAY_AMOUNT;
+				//doGravity(0);//this does the whole board
+
 			}
 	}
 
@@ -236,9 +251,8 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	//VDP_drawText(debug_string,16,13);
 
-	//find the first open timer (there are 4 total destroyTimer[4])
 	u8 whichTimer=0;
-	while(destroyTimer[whichTimer]!=0)whichTimer++;
+	while(destroyTimer[whichTimer]!=0)whichTimer++;	//find the first open timer (there are 4 total destroyTimer[4])
 	
 	do
 	{
@@ -257,7 +271,6 @@ static void connectedTilesChangeGraphic()
 
 	//sprintf(debug_string,"%d pieces",destroyCount);
 	//VDP_drawText(debug_string,16,14);
-
 }
 
 static void destroyTiles()
@@ -276,7 +289,8 @@ static void destroyTiles()
 		}
 		destroyTimer[timerToUse]=0;
 		p1.flag_redraw=1;
-		doGravity(0);
+		gravity_delay=GRAVITY_DELAY_AMOUNT;
+		//doGravity(0);
 	}
 }
 

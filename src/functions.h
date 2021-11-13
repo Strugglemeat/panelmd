@@ -1,6 +1,5 @@
 static void drawBorder();
 static void handleInput();
-static void updateSprites();
 static void print_debug();
 static u8 randomRange(u8 rangeStart, u8 rangeEnd);
 static void updateBackground();
@@ -60,17 +59,23 @@ u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at 
 u8 hasSwitched;
 
 u8 flag_redraw;
+
+u8 redraw_delay;
+Sprite* switch1;
+Sprite* switch2;
+u16 switch1x,switch2x;//255 will overflow - 320 wide screen
+u8 switchy;
 } Player;
 
 Player p1;
 
-u8 timer=0;
+u8 timer=0;//global, not needed for both players
 
-u8 redraw_delay=0;
 #define REDRAW_DELAY_AMOUNT 8
 
 static void clearGrid()//only called at initialization
 {
+	VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);
 	for(u8 clearY=maxY;clearY>0;clearY--)
 	{
 		for(u8 clearX=1;clearX<maxX+1;clearX++)
@@ -122,13 +127,11 @@ VDP_setPalette(PAL1, cursor.palette->data);
 //border
 VDP_setPalette(PAL2, bgtile.palette->data);
 VDP_loadTileSet(bgtile.tileset,borderIndex,DMA);
-
 drawBorder();
 
 //tiles
 VDP_setPalette(PAL3, alltiles.palette->data);
 VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
-//VDP_setPalette(PAL2, modtiles.palette->data);//change this to use highlight/shadow instead of a new palette
 
 clearGrid();
 
@@ -157,7 +160,15 @@ VDP_setHilightShadow(1);
 
 SPR_setVisibility(p1.cursor,VISIBLE);
 SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
-updateSprites();//has SPR_Update() in it
+SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+SPR_update();
+
+p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+SPR_setVisibility(p1.switch1,HIDDEN);
+SPR_setPriorityAttribut(p1.switch1, TRUE);//because of hilight/shadow
+p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+SPR_setVisibility(p1.switch2,HIDDEN);
+SPR_setPriorityAttribut(p1.switch2, TRUE);//because of hilight/shadow
 
 p1.flag_redraw=0;
 }
@@ -289,21 +300,41 @@ static void renderScene()
 	}
 	else if(p1.flag_redraw==2)//after a blank swap or regular swap
 	{
-		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-		
-		//p1.flag_redraw=0;
-		//updateBackground();
-		
+		p1.switch1x=p1.cursorX+2;
+		p1.switchy=p1.cursorY+2;
+		p1.switch2x=p1.cursorX+16+2;
+
+		if(p1.board[p1.xpos+1][p1.ypos]<=numColors)SPR_setFrame(p1.switch1, p1.board[p1.xpos+1][p1.ypos]-1);
+		if(p1.board[p1.xpos][p1.ypos]<=numColors)SPR_setFrame(p1.switch2, p1.board[p1.xpos][p1.ypos]-1);
+
+		if(p1.board[p1.xpos+1][p1.ypos]>0)SPR_setVisibility(p1.switch1,VISIBLE);
+
+		if(p1.board[p1.xpos][p1.ypos]>0)SPR_setVisibility(p1.switch2,VISIBLE);
+
 		p1.flag_redraw=3;
-		redraw_delay=REDRAW_DELAY_AMOUNT;
+		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
 	}
-	else if(p1.flag_redraw==3 && redraw_delay==0)
+	else if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
+	{//putting it here removes the blinking effect on a swap with a blank tile
+		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
+	}
+	else if(p1.flag_redraw==3 && p1.redraw_delay>0)
 	{
+		p1.switch1x+=2;
+		p1.switch2x-=2;
+		SPR_setPosition(p1.switch1,p1.switch1x,p1.switchy);
+		SPR_setPosition(p1.switch2,p1.switch2x,p1.switchy);
+		SPR_update();
+	}
+	else if(p1.flag_redraw==3 && p1.redraw_delay==0)
+	{
+		SPR_setVisibility(p1.switch1,HIDDEN);
+		SPR_setVisibility(p1.switch2,HIDDEN);
+		SPR_update();
+
 		p1.flag_redraw=0;
 		updateBackground();
 	}
-	//p1.flag_redraw=0;
-	//updateBackground();
 }
 
 static u8 checkTopRow()
@@ -337,12 +368,6 @@ static void pushupRows()
 */
 }
 
-static void updateSprites()
-{
-    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-	SPR_update();
-}
-
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
 {
 	return (random() % (rangeEnd + 1 - rangeStart)) + rangeStart;
@@ -357,24 +382,17 @@ static void print_debug()
 	}
 	else VDP_clearText(34,0,6);*/
 
-	if(p1.xpos<10)VDP_clearText(7,1,1);
-	sprintf(debug_string,"crsrX:%d",p1.xpos);
+	if(p1.xpos<10)VDP_clearText(6,1,1);
+	sprintf(debug_string,"Xpos:%d",p1.xpos);
 	VDP_drawText(debug_string,0,1);
 
-	if(p1.ypos<10)VDP_clearText(15,1,1);
-	sprintf(debug_string,"crsrY:%d",p1.ypos);
+	if(p1.ypos<10)VDP_clearText(14,1,1);
+	sprintf(debug_string,"Ypos:%d",p1.ypos);
 	VDP_drawText(debug_string,8,1);
-/*
-	sprintf(debug_string,"accel:%d",p1.acceleration);
-	VDP_drawText(debug_string,16,5);
 
-	VDP_clearText(21,2,4);
+	VDP_clearText(21,1,4);
 	sprintf(debug_string,"color:%d",p1.board[p1.xpos][p1.ypos]);
-	VDP_drawText(debug_string,16,2);
-
-	VDP_clearText(21,2,8);
-	sprintf(debug_string,"timer:%d",timer);
-	VDP_drawText(debug_string,16,2);*/
+	VDP_drawText(debug_string,16,1);
 
 	sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
 }
