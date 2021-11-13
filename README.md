@@ -6,17 +6,12 @@ destroying: T and L combos don't work
 ===
 work on the redraw function to redraw less of the screen after gravity and any other times when it does a full screen redraw
 ==
-work on the gravity function to use the parameter and calc less, even just half the board would be an improvement
-===
-connection checks after gravity dont work if it is a hori that was dropped 1 tile height
-===
-generate new rows - still no vertical matching check
+work on the gravity function to restrict X , even just half the board would be an improvement
+specify min and max X coords for doGravity(), cuts down a lot
 ===
 send up rows while tiles destroying - buggy (maybe this should just be totally disabled - because in 2p they shouldnt be able to raise while someone is working?)
 ===
-needs pause midair when a piece falls due to gravity - not instant
-dogravity now being called EVERY TIME we match a piece - not necessary
-specify min and max X coords for doGravity(), cuts down a lot
+dogravity now being called EVERY TIME we match a piece - try to restrict it more
 ===
 convert gravity falling pieces to sprites so they can fall 1px at a time
 ===
