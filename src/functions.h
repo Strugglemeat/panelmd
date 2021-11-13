@@ -8,13 +8,14 @@ static void insertInitialRowData();
 static void generateNewRow();
 static void pushupRows();
 static u8 checkTopRow();
-static void doGravity(u8 highestRow);
+static void doGravity();
 static void clearGrid();
 static void checkMatchRow(u8 whichRow, u8 color);
 static void checkMatchColumn(u8 whichColumn, u8 color);
 static void renderScene();
 static void connectedTilesChangeGraphic();
 static void destroyTiles();
+static void checkGeneratedNewRow();
 
 #define borderIndex 1
 #define tileIndex 5
@@ -371,6 +372,52 @@ static void pushupRows()
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
 {
 	return (random() % (rangeEnd + 1 - rangeStart)) + rangeStart;
+}
+
+static void generateNewRow()
+{
+	for(u8 newX=1;newX<maxX+1;newX++)
+	{
+		p1.board[newX][maxY+1]=randomRange(1,numColors);
+	}
+//check for rows of matching
+	for(u8 gencheckXinc=1;gencheckXinc<maxX+1;gencheckXinc++)
+		{
+			if(p1.board[gencheckXinc][maxY+1]==p1.board[gencheckXinc+1][maxY+1])
+				{
+					if(p1.board[gencheckXinc+1][maxY+1]<6)p1.board[gencheckXinc+1][maxY+1]++;
+					else if(p1.board[gencheckXinc+1][maxY+1]==6)p1.board[gencheckXinc+1][maxY+1]=1;
+				}
+		}
+
+	checkGeneratedNewRow();//check for column matches
+}
+
+static void checkGeneratedNewRow()
+{
+	//and we now need to manage the vertical matches of the newly created rows
+
+	u8 columnColor,columnNumber,checkGenYinc,checkMatchVert=0,checkVertFlag=0;
+
+	for(columnNumber=1;columnNumber<maxX+1;columnNumber++)
+	{
+		columnColor=p1.board[columnNumber][maxY-1];
+		for(checkGenYinc=maxY+1;checkGenYinc>maxY-1;checkGenYinc--)
+			{
+				if(p1.board[columnNumber][checkGenYinc]==columnColor)
+					{
+						checkMatchVert++;
+						if(checkMatchVert>=2){checkVertFlag=1;break;}
+					}
+				else 
+					{
+						checkMatchVert=0;
+					}
+			}
+	}
+
+	if(checkVertFlag==1)generateNewRow();
+	else if(checkVertFlag==0)pushupRows();
 }
 
 static void print_debug()

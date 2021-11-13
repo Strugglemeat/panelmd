@@ -17,11 +17,11 @@ initialize();
 
 	while(1)
 	{
+		handleInput();
 		timer++;
 		if(p1.redraw_delay>0)p1.redraw_delay--;
-		if(gravity_delay==1)doGravity(0);
+		if(gravity_delay==1)doGravity();
 		if(gravity_delay>0)gravity_delay--;
-		handleInput();
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
@@ -132,7 +132,7 @@ static void handleInput()
 	//if(value1 & BUTTON_START)doGravity(0);//DEBUG
 }
 
-static void doGravity(u8 highestRow)//the parameter here should be the lowest (highest number) row of where the tile(s) landed
+static void doGravity()//the parameter here should be the lowest (highest number) row of where the tile(s) landed
 {
 	u8 gravityDoneFlag=0;
 	u8 hasGravity=0;
@@ -142,7 +142,7 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 	do
 	{
 	hasGravity=0;
-		for(u8 gravY=maxY-1;gravY>highestRow;gravY--)
+		for(u8 gravY=maxY-1;gravY>0;gravY--)
 		{
 			for(u8 gravX=1;gravX<maxX+1;gravX++)
 			{
@@ -165,6 +165,7 @@ static void doGravity(u8 highestRow)//the parameter here should be the lowest (h
 			p1.flag_redraw=1;
 
 			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]);
+			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]+1);//connection checks after gravity dont work if it is a hori that was dropped 1 tile height
 			checkMatchColumn(dropCheckX,p1.board[dropCheckX][dropCheckY]);
 			
 			sprintf(debug_string,"dcX:%d,dcY:%d",dropCheckX,dropCheckY);
@@ -292,23 +293,4 @@ static void destroyTiles()
 		gravity_delay=GRAVITY_DELAY_AMOUNT;
 		//doGravity(0);
 	}
-}
-
-static void generateNewRow()
-{
-	for(u8 newX=1;newX<maxX+1;newX++)
-	{
-		p1.board[newX][maxY+1]=randomRange(1,numColors);
-	}
-
-	for(u8 gencheckXinc=1;gencheckXinc<maxX+1;gencheckXinc++)
-		{
-			if(p1.board[gencheckXinc][maxY+1]==p1.board[gencheckXinc+1][maxY+1])
-				{
-					if(p1.board[gencheckXinc+1][maxY+1]<6)p1.board[gencheckXinc+1][maxY+1]++;
-					else if(p1.board[gencheckXinc+1][maxY+1]==6)p1.board[gencheckXinc+1][maxY+1]=1;
-				}
-		}
-//and we now need to manage the vertical matches of the newly created rows
-	pushupRows();
 }
