@@ -2,8 +2,6 @@ cursor should be animated - pulses (middle section only moves Y+/Y-, outer secti
 ===
 it's deleting extra tiles on match - need to cleanup the destroy array
 ===
-destroying: T and L combos don't work
-===
 work on the redraw function to redraw less of the screen after gravity and any other times when it does a full screen redraw
 ==
 work on the gravity function to restrict X , even just half the board would be an improvement
