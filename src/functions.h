@@ -35,6 +35,8 @@ static void checkGeneratedNewRow();
 
 #define MaxInOneMove 16
 
+#define REDRAW_DELAY_AMOUNT 8
+
 enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 
 char debug_string[40] = "";
@@ -55,8 +57,6 @@ u8 destroyIndex;
 u8 destroyX[MaxInOneMove+1];
 u8 destroyY[MaxInOneMove+1];//max 16 destroyed in one move - 0 of index isn't used
 
-u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at [1][1] for bottom left corner
-
 u8 hasSwitched;
 
 u8 flag_redraw;
@@ -70,9 +70,8 @@ u8 switchy;
 
 Player p1;
 
+u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at [1][1] for bottom left corner
 u8 timer=0;//global, not needed for both players
-
-#define REDRAW_DELAY_AMOUNT 8
 
 static void clearGrid()//only called at initialization
 {
@@ -81,7 +80,7 @@ static void clearGrid()//only called at initialization
 	{
 		for(u8 clearX=1;clearX<maxX+1;clearX++)
 		{
-			p1.board[clearX][clearY]=0;
+			board[clearX][clearY]=0;
 		}
 	}
 }
@@ -99,21 +98,18 @@ static void drawBorder()//only called at initialization
 	{
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 0, iY, 2, 2);
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 38, iY, 2, 2);
-
-		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 14, iY, 2, 2);
-		//VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 0, FALSE, FALSE, borderIndex), 24, iY, 2, 2);
 	}
 }
 
 static void insertInitialRowData()//only called at initialization
 {
-	p1.board[6][maxY-2]=randomRange(1,numColors);
-	p1.board[6][maxY-1]=randomRange(1,numColors);
-	p1.board[2][maxY]=randomRange(1,numColors);
-	p1.board[3][maxY]=randomRange(1,numColors);
-	p1.board[4][maxY]=randomRange(1,numColors);
-	p1.board[5][maxY]=randomRange(1,numColors);
-	p1.board[6][maxY]=randomRange(1,numColors);
+	board[6][maxY-2]=randomRange(1,numColors);
+	board[6][maxY-1]=randomRange(1,numColors);
+	board[2][maxY]=randomRange(1,numColors);
+	board[3][maxY]=randomRange(1,numColors);
+	board[4][maxY]=randomRange(1,numColors);
+	board[5][maxY]=randomRange(1,numColors);
+	board[6][maxY]=randomRange(1,numColors);
 }
 
 static void initialize()
@@ -124,6 +120,8 @@ VDP_setScreenWidth320();
 VDP_setScreenHeight224();
 VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
 VDP_setPalette(PAL1, cursor.palette->data);
+VDP_setTextPlane(BG_B);
+VDP_setScrollingMode(HSCROLL_PLANE , VSCROLL_PLANE);
 
 //border
 VDP_setPalette(PAL2, bgtile.palette->data);
@@ -138,13 +136,6 @@ clearGrid();
 
 insertInitialRowData();
 updateBackground();
-
-sprintf(debug_string,"press B");
-VDP_drawText(debug_string,12,8);
-sprintf(debug_string,"to raise");
-VDP_drawText(debug_string,12,9);
-sprintf(debug_string,"the stack");
-VDP_drawText(debug_string,12,10);
 
 SYS_enableInts();
 
@@ -283,9 +274,9 @@ static void updateBackground()
 		{
 		for (iY=yStart;iY<yEnd;iY++)//goes from the top down. 1,12 is bottom left, 1,1 is top left.
 			{						  //a lower number means drawing starting from lower on the board.
-			if(p1.board[iX][iY]!=0)
+			if(board[iX][iY]!=0)
 				{
-				drawTile(iX,iY,p1.board[iX][iY]);
+				drawTile(iX,iY,board[iX][iY]);
 				}
 			}
 		}
@@ -305,12 +296,12 @@ static void renderScene()
 		p1.switchy=p1.cursorY+2;
 		p1.switch2x=p1.cursorX+16+2;
 
-		if(p1.board[p1.xpos+1][p1.ypos]<=numColors)SPR_setFrame(p1.switch1, p1.board[p1.xpos+1][p1.ypos]-1);
-		if(p1.board[p1.xpos][p1.ypos]<=numColors)SPR_setFrame(p1.switch2, p1.board[p1.xpos][p1.ypos]-1);
+		if(board[p1.xpos+1][p1.ypos]<=numColors)SPR_setFrame(p1.switch1, board[p1.xpos+1][p1.ypos]-1);
+		if(board[p1.xpos][p1.ypos]<=numColors)SPR_setFrame(p1.switch2, board[p1.xpos][p1.ypos]-1);
 
-		if(p1.board[p1.xpos+1][p1.ypos]>0)SPR_setVisibility(p1.switch1,VISIBLE);
+		if(board[p1.xpos+1][p1.ypos]>0)SPR_setVisibility(p1.switch1,VISIBLE);
 
-		if(p1.board[p1.xpos][p1.ypos]>0)SPR_setVisibility(p1.switch2,VISIBLE);
+		if(board[p1.xpos][p1.ypos]>0)SPR_setVisibility(p1.switch2,VISIBLE);
 
 		p1.flag_redraw=3;
 		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
@@ -343,7 +334,7 @@ static u8 checkTopRow()
 	u8 emptyCheck=0;
 		for(u8 xPos=1;xPos<maxX+1;xPos++)
 		{
-			if(p1.board[xPos][1]>0)emptyCheck=1;
+			if(board[xPos][1]>0)emptyCheck=1;
 		}
 
 	if(emptyCheck>0)return 1;
@@ -356,17 +347,11 @@ static void pushupRows()
 	{
 		for(u8 xPos=1;xPos<maxX+1;xPos++)
 		{
-			p1.board[xPos][yPos]=p1.board[xPos][yPos+1];
+			board[xPos][yPos]=board[xPos][yPos+1];
 		}
 	}
 
 	p1.flag_redraw=1;
-/*
-	for(u8 x=1;x<maxX;x++)
-	{
-		if(p1.board[x][maxY]==p1.board[x][maxY-1]){checkMatchColumn(x, p1.board[x][maxY]);}
-	}
-*/
 }
 
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
@@ -378,33 +363,33 @@ static void generateNewRow()
 {
 	for(u8 newX=1;newX<maxX+1;newX++)
 	{
-		p1.board[newX][maxY+1]=randomRange(1,numColors);
+		board[newX][maxY+1]=randomRange(1,numColors);
 	}
-//check for rows of matching
-	for(u8 gencheckXinc=1;gencheckXinc<maxX+1;gencheckXinc++)
-		{
-			if(p1.board[gencheckXinc][maxY+1]==p1.board[gencheckXinc+1][maxY+1])
-				{
-					if(p1.board[gencheckXinc+1][maxY+1]<6)p1.board[gencheckXinc+1][maxY+1]++;
-					else if(p1.board[gencheckXinc+1][maxY+1]==6)p1.board[gencheckXinc+1][maxY+1]=1;
-				}
-		}
 
 	checkGeneratedNewRow();//check for column matches
 }
 
 static void checkGeneratedNewRow()
 {
+	for(u8 gencheckXinc=1;gencheckXinc<maxX+1;gencheckXinc++)//check for rows of matching
+		{
+			if(board[gencheckXinc][maxY+1]==board[gencheckXinc+1][maxY+1])
+				{
+					if(board[gencheckXinc+1][maxY+1]<6)board[gencheckXinc+1][maxY+1]++;
+					else if(board[gencheckXinc+1][maxY+1]==6)board[gencheckXinc+1][maxY+1]=1;
+				}
+		}
+
 	//and we now need to manage the vertical matches of the newly created rows
 
 	u8 columnColor,columnNumber,checkGenYinc,checkMatchVert=0,checkVertFlag=0;
 
 	for(columnNumber=1;columnNumber<maxX+1;columnNumber++)
 	{
-		columnColor=p1.board[columnNumber][maxY-1];
+		columnColor=board[columnNumber][maxY-1];
 		for(checkGenYinc=maxY+1;checkGenYinc>maxY-1;checkGenYinc--)
 			{
-				if(p1.board[columnNumber][checkGenYinc]==columnColor)
+				if(board[columnNumber][checkGenYinc]==columnColor)
 					{
 						checkMatchVert++;
 						if(checkMatchVert>=2){checkVertFlag=1;break;}
@@ -421,13 +406,15 @@ static void checkGeneratedNewRow()
 }
 
 static void print_debug()
-{/*
+{
+	sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
+/*
 	if(SYS_getFPS()<60)
 	{
 		sprintf(debug_string,"FPS:%ld", SYS_getFPS());
-		VDP_drawText(debug_string,34,0);
+		VDP_drawText(debug_string,34,1);
 	}
-	else VDP_clearText(34,0,6);*/
+	else VDP_clearText(34,1,6);*/
 
 	if(p1.xpos<10)VDP_clearText(6,1,1);
 	sprintf(debug_string,"Xpos:%d",p1.xpos);
@@ -437,9 +424,7 @@ static void print_debug()
 	sprintf(debug_string,"Ypos:%d",p1.ypos);
 	VDP_drawText(debug_string,8,1);
 
-	VDP_clearText(21,1,4);
-	sprintf(debug_string,"color:%d",p1.board[p1.xpos][p1.ypos]);
+	VDP_clearText(23,1,1);
+	sprintf(debug_string,"color:%d",board[p1.xpos][p1.ypos]);
 	VDP_drawText(debug_string,16,1);
-
-	sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
 }

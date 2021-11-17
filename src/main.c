@@ -11,9 +11,12 @@ u8 toDestroyY[4][17];
 u8 gravity_delay;
 #define GRAVITY_DELAY_AMOUNT 16
 
+u8 scrollOffset;
+
 int main()
 {
-initialize();
+	initialize();
+	scrollOffset=p1.ypos-blocksize+2;
 
 	while(1)
 	{
@@ -28,7 +31,8 @@ initialize();
 		if(p1.flag_redraw!=0)renderScene();
 		print_debug();
 	}
-return 0;
+
+	return 0;
 }
 
 static void handleInput()
@@ -101,13 +105,13 @@ static void handleInput()
 		p1.hasSwitched=1;
 
 		u8 color1=0,color2=0;
-        color1=p1.board[p1.xpos][p1.ypos];
-        color2=p1.board[p1.xpos+1][p1.ypos];//this is to see if we swapped with an empty, to do gravity
+        color1=board[p1.xpos][p1.ypos];
+        color2=board[p1.xpos+1][p1.ypos];//this is to see if we swapped with an empty, to do gravity
 
 		if(color1<=numColors && color2<=numColors)
 		{
-			p1.board[p1.xpos][p1.ypos]=p1.board[p1.xpos+1][p1.ypos];
-			p1.board[p1.xpos+1][p1.ypos]=color1;
+			board[p1.xpos][p1.ypos]=board[p1.xpos+1][p1.ypos];
+			board[p1.xpos+1][p1.ypos]=color1;
 
 			p1.flag_redraw=2;
 			
@@ -130,6 +134,16 @@ static void handleInput()
 	if((!(value1 & BUTTON_A)) && (!(value1 & BUTTON_C))){p1.hasSwitched=0;}
 
 	//if(value1 & BUTTON_START)doGravity(0);//DEBUG
+	if(value1 & BUTTON_START)
+	{
+		VDP_setVerticalScroll(BG_A,scrollOffset += 1);
+		//VDP_setVerticalScrollVSync(BG_A,scrollOffset += 1);
+		if(scrollOffset >= 255) scrollOffset = 0;
+
+		p1.cursorY-=1;
+		SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+		SPR_update();
+	}
 }
 
 static void doGravity()//the parameter here should be the lowest (highest number) row of where the tile(s) landed
@@ -146,10 +160,10 @@ static void doGravity()//the parameter here should be the lowest (highest number
 		{
 			for(u8 gravX=1;gravX<maxX+1;gravX++)
 			{
-				if(p1.board[gravX][gravY]>0 && p1.board[gravX][gravY+1]==0)
+				if(board[gravX][gravY]>0 && board[gravX][gravY+1]==0)
 				{
-					p1.board[gravX][gravY+1]=p1.board[gravX][gravY];
-					p1.board[gravX][gravY]=0;
+					board[gravX][gravY+1]=board[gravX][gravY];
+					board[gravX][gravY]=0;
 					gravityDoneFlag=1;
 					hasGravity++;
 
@@ -164,14 +178,14 @@ static void doGravity()//the parameter here should be the lowest (highest number
 		{
 			p1.flag_redraw=1;
 
-			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]);
-			checkMatchRow(dropCheckY,p1.board[dropCheckX][dropCheckY]+1);//connection checks after gravity dont work if it is a hori that was dropped 1 tile height
-			checkMatchColumn(dropCheckX,p1.board[dropCheckX][dropCheckY]);
+			checkMatchRow(dropCheckY,board[dropCheckX][dropCheckY]);
+			checkMatchRow(dropCheckY,board[dropCheckX][dropCheckY]+1);//connection checks after gravity dont work if it is a hori that was dropped 1 tile height
+			checkMatchColumn(dropCheckX,board[dropCheckX][dropCheckY]);
 			
 			sprintf(debug_string,"dcX:%d,dcY:%d",dropCheckX,dropCheckY);
 			VDP_drawText(debug_string,0,0);
 			/*
-			sprintf(debug_string,"gravColor:%d",p1.board[dropCheckX][dropCheckY]);
+			sprintf(debug_string,"gravColor:%d",board[dropCheckX][dropCheckY]);
 			VDP_drawText(debug_string,16,10);
 			*/
 		}
@@ -185,7 +199,7 @@ static void checkMatchRow(u8 whichRow, u8 color)
 	{
 		for(checkXinc=1;checkXinc<maxX+1;checkXinc++)
 			{
-				if(p1.board[checkXinc][whichRow]==color)
+				if(board[checkXinc][whichRow]==color)
 					{
 						matchesHori++;
 						if(matchStartX==0)matchStartX=checkXinc;
@@ -208,7 +222,7 @@ static void checkMatchRow(u8 whichRow, u8 color)
 			p1.destroyY[p1.destroyIndex]=whichRow;
 			incVar++;
 		}
-		while(p1.board[matchStartX+incVar][whichRow]==color && matchStartX<maxX);
+		while(board[matchStartX+incVar][whichRow]==color && matchStartX<maxX);
 	}
 }
 
@@ -220,7 +234,7 @@ static void checkMatchColumn(u8 whichColumn, u8 color)//this is pulling colors f
 	{
 		for(checkYinc=1;checkYinc<maxY+1;checkYinc++)
 			{
-				if(p1.board[whichColumn][checkYinc]==color)
+				if(board[whichColumn][checkYinc]==color)
 					{
 						matchesVert++;
 						if(matchStartY==0)matchStartY=checkYinc;
@@ -243,7 +257,7 @@ static void checkMatchColumn(u8 whichColumn, u8 color)//this is pulling colors f
 			p1.destroyY[p1.destroyIndex]=matchStartY+incVar;
 			incVar++;
 		}
-		while(p1.board[whichColumn][matchStartY+incVar]==color && matchStartY<maxY+1);
+		while(board[whichColumn][matchStartY+incVar]==color && matchStartY<maxY+1);
 	}
 }
 
@@ -252,16 +266,19 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	//VDP_drawText(debug_string,16,13);
 
+	u8 debugDestroyCount=0;
+
 	u8 whichTimer=0;
 	while(destroyTimer[whichTimer]!=0)whichTimer++;	//find the first open timer (there are 4 total destroyTimer[4])
 	
 	do
 	{
-		if(p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
+		if(board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
 		{//otherwise, it'll +6 the same tile twice if it's involved in both a hori and vert match
-			p1.board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic		
+			board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic		
 			toDestroyX[whichTimer][p1.destroyIndex]=p1.destroyX[p1.destroyIndex];
 			toDestroyY[whichTimer][p1.destroyIndex]=p1.destroyY[p1.destroyIndex];
+			debugDestroyCount++;
 		}
 		p1.destroyIndex--;
 	}while(p1.destroyIndex>0);
@@ -269,9 +286,8 @@ static void connectedTilesChangeGraphic()
 	destroyTimer[whichTimer]=timer+destroyDelay;
 	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
 
-
-	//sprintf(debug_string,"%d pieces",destroyCount);
-	//VDP_drawText(debug_string,16,14);
+	sprintf(debug_string,"combo:%d",debugDestroyCount);
+	VDP_drawText(debug_string,16,0);
 }
 
 static void destroyTiles()
@@ -283,10 +299,10 @@ static void destroyTiles()
 	{
 		for (u8 incN=1;incN<MaxInOneMove;incN++)
 		{
-			if(toDestroyX[timerToUse][incN]==0)break;
-			p1.board[toDestroyX[timerToUse][incN]][toDestroyY[timerToUse][incN]]=0;
+			board[toDestroyX[timerToUse][incN]][toDestroyY[timerToUse][incN]]=0;
 			toDestroyX[timerToUse][incN]=0;
 			toDestroyY[timerToUse][incN]=0;
+			//if(toDestroyX[timerToUse][incN+1]==0)break;
 		}
 		destroyTimer[timerToUse]=0;
 		p1.flag_redraw=1;
