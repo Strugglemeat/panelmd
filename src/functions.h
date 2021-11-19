@@ -332,6 +332,7 @@ static void renderScene()
 static u8 checkTopRow()
 {
 	u8 emptyCheck=0;
+
 		for(u8 xPos=1;xPos<maxX+1;xPos++)
 		{
 			if(board[xPos][1]>0)emptyCheck=1;
@@ -416,15 +417,15 @@ static void print_debug()
 	}
 	else VDP_clearText(34,1,6);*/
 
-	if(p1.xpos<10)VDP_clearText(6,1,1);
+	if(p1.xpos<10)VDP_clearText(6,0,1);
 	sprintf(debug_string,"Xpos:%d",p1.xpos);
-	VDP_drawText(debug_string,0,1);
+	VDP_drawText(debug_string,0,0);
 
-	if(p1.ypos<10)VDP_clearText(14,1,1);
+	if(p1.ypos<10)VDP_clearText(14,0,1);
 	sprintf(debug_string,"Ypos:%d",p1.ypos);
-	VDP_drawText(debug_string,8,1);
+	VDP_drawText(debug_string,8,0);
 
-	VDP_clearText(23,1,1);
+	VDP_clearText(23,0,1);
 	sprintf(debug_string,"color:%d",board[p1.xpos][p1.ypos]);
-	VDP_drawText(debug_string,16,1);
+	VDP_drawText(debug_string,16,0);
 }

@@ -29,7 +29,7 @@ int main()
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
 		if(p1.flag_redraw!=0)renderScene();
-		print_debug();
+		//print_debug();
 	}
 
 	return 0;
@@ -124,10 +124,7 @@ static void handleInput()
 		if(color1==0 || color2==0)//empty swap
 			{
 				p1.flag_redraw=2;
-				//doGravity(p1.ypos-1);//this only sends downwards, not upwards. would be appropriate for switching if there is nothing on top
 				gravity_delay=GRAVITY_DELAY_AMOUNT;
-				//doGravity(0);//this does the whole board
-
 			}
 	}
 
@@ -169,6 +166,9 @@ static void doGravity()//the parameter here should be the lowest (highest number
 
 					dropCheckX=gravX;
 					dropCheckY=gravY+1;
+
+					checkMatchColumn(dropCheckX,board[dropCheckX][dropCheckY]);
+					checkMatchRow(dropCheckY,board[dropCheckX][dropCheckY]);
 				}
 			}
 		}
@@ -177,14 +177,11 @@ static void doGravity()//the parameter here should be the lowest (highest number
 	if(gravityDoneFlag>0)
 		{
 			p1.flag_redraw=1;
-
-			checkMatchRow(dropCheckY,board[dropCheckX][dropCheckY]);
-			checkMatchRow(dropCheckY,board[dropCheckX][dropCheckY]+1);//connection checks after gravity dont work if it is a hori that was dropped 1 tile height
-			checkMatchColumn(dropCheckX,board[dropCheckX][dropCheckY]);
-			
-			sprintf(debug_string,"dcX:%d,dcY:%d",dropCheckX,dropCheckY);
-			VDP_drawText(debug_string,0,0);
 			/*
+			VDP_clearText(19,0,2);
+			sprintf(debug_string,"dcX:%d,dcY:%d,color:%d",dropCheckX,dropCheckY,board[dropCheckX][dropCheckY]);
+			VDP_drawText(debug_string,0,0);
+			
 			sprintf(debug_string,"gravColor:%d",board[dropCheckX][dropCheckY]);
 			VDP_drawText(debug_string,16,10);
 			*/
@@ -287,7 +284,7 @@ static void connectedTilesChangeGraphic()
 	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
 
 	sprintf(debug_string,"combo:%d",debugDestroyCount);
-	VDP_drawText(debug_string,16,0);
+	VDP_drawText(debug_string,26,0);
 }
 
 static void destroyTiles()
