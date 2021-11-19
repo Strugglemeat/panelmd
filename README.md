@@ -1,6 +1,11 @@
+recognition of chains
+===
+fix the cursor wonkiness
+*do i need to create one at every swap?
+===
 cursor should be animated - pulses (middle section only moves Y+/Y-, outer sections move both. they are all the same tile, flipped)
 ===
-it's deleting extra tiles on match - need to cleanup the destroy array
+migrate stack raise from 1 full row at a time to scrolling
 ===
 work on the redraw function to redraw less of the screen after gravity and any other times when it does a full screen redraw
 ==
@@ -12,6 +17,7 @@ send up rows while tiles destroying - buggy (maybe this should just be totally d
 dogravity now being called EVERY TIME we match a piece - try to restrict it more
 ===
 convert gravity falling pieces to sprites so they can fall 1px at a time
+make them bounce a bit - let it fall PAST the destination, then come back
 ===
 vertical checkmatch goes through an entire column, not efficient
 whatever gets connected MUST have touched the switched tiles (what about gravity?)
