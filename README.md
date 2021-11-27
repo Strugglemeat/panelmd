@@ -3,22 +3,17 @@ reduce gravity falling speed - introduce delay
 [graphical flourish]
 explosion anim at each block that disappears
 --------
-new rising row, unshaded(not priority)
---------
-when switch tiles, introduce a delay to not redraw their tiles until they have finished switching and in this period we will unhide the sprites and place them
---------
 [gameplay]
 recognition of chains
 chain definition - a falling piece is used in a combo
 --------
-fix the cursor wonkiness
+fix the switchsprite wonkiness
 *do i need to create one at every swap?
 --------
 [graphics]
 cursor should be animated - pulses (middle section only moves Y+/Y-, outer sections move both. they are all the same tile, flipped)
---------
-[gameplay]
-migrate stack raise from 1 full row at a time to scrolling
+++
+different cursor for player2
 --------
 [optimization]
 work on the redraw function to redraw less of the screen after gravity and any other times when it does a full screen redraw
@@ -26,8 +21,6 @@ work on the redraw function to redraw less of the screen after gravity and any o
 [optimization]
 work on the gravity function to restrict X , even just half the board would be an improvement
 specify min and max X coords for doGravity(), cuts down a lot
---------
-send up rows while tiles destroying - buggy (maybe this should just be totally disabled - because in 2p they shouldnt be able to raise while someone is working?)
 --------
 [optimization]
 dogravity now being called EVERY TIME we match a piece - try to restrict it more
