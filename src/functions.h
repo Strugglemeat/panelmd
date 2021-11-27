@@ -24,9 +24,6 @@ static void scrollUp();
 #define maxX 18//6 for regular, 18 max
 #define maxY 12
 #define blocksize 16
-#define p1boardstartX 16
-#define p2boardstartX 208
-#define boardstartY 16
 
 #define moveDelayAmt 8
 #define MAX_SPEEDUP 6//this can't be more than moveDelayAmt!
@@ -34,7 +31,7 @@ static void scrollUp();
 #define accelerationAmount 2//higher is faster
 #define raiseDelayAmount 12//lower is faster
 
-#define MaxInOneMove 16
+#define MaxPossibleCombo 16
 
 #define REDRAW_DELAY_AMOUNT 8
 
@@ -59,8 +56,8 @@ u8 lastDirInputHowMany;
 u8 raiseDelay;
 
 u8 destroyIndex;
-u8 destroyX[MaxInOneMove+1];
-u8 destroyY[MaxInOneMove+1];//max 16 destroyed in one move - 0 of index isn't used
+u8 destroyX[MaxPossibleCombo+1];
+u8 destroyY[MaxPossibleCombo+1];//max 16 destroyed in one move - 0 of index isn't used
 
 u8 hasSwitched;
 
@@ -148,8 +145,8 @@ SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init st
 
 p1.xpos=1;
 p1.ypos=maxY;
-p1.cursorX=p1boardstartX+((p1.xpos-1)*blocksize)-2;
-p1.cursorY=boardstartY+((p1.ypos-1)*blocksize)-2;
+p1.cursorX=16+((p1.xpos-1)*blocksize)-2;
+p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
 
 VDP_setHilightShadow(1);
 

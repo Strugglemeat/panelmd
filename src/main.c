@@ -285,7 +285,7 @@ static void destroyTiles()
 
 	if(timer==destroyTimer[timerToUse])
 	{
-		for (u8 incN=1;incN<MaxInOneMove;incN++)
+		for (u8 incN=1;incN<MaxPossibleCombo;incN++)
 		{
 			board[toDestroyX[timerToUse][incN]][toDestroyY[timerToUse][incN]]=0;
 			toDestroyX[timerToUse][incN]=0;
