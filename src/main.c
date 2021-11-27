@@ -12,6 +12,7 @@ u8 gravity_delay;
 #define GRAVITY_DELAY_AMOUNT 16
 
 u8 scrollOffset;
+u8 scrolledAmount=0;
 
 int main()
 {
@@ -29,7 +30,7 @@ int main()
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
 		if(p1.flag_redraw!=0)renderScene();
-		//print_debug();
+		print_debug();
 	}
 
 	return 0;
@@ -123,7 +124,7 @@ static void handleInput()
 
 		if(color1==0 || color2==0)//empty swap
 			{
-				p1.flag_redraw=2;
+				//p1.flag_redraw=2;
 				gravity_delay=GRAVITY_DELAY_AMOUNT;
 			}
 	}
@@ -133,9 +134,12 @@ static void handleInput()
 	//if(value1 & BUTTON_START)doGravity(0);//DEBUG
 	if(value1 & BUTTON_START)
 	{
+		if(board[1][maxY+1]==0)generateNewRow();
+
 		VDP_setVerticalScroll(BG_A,scrollOffset += 1);
 		//VDP_setVerticalScrollVSync(BG_A,scrollOffset += 1);
 		if(scrollOffset >= 255) scrollOffset = 0;
+		scrolledAmount++;
 
 		p1.cursorY-=1;
 		SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
@@ -187,6 +191,8 @@ static void doGravity()//the parameter here should be the lowest (highest number
 			*/
 		}
 }
+
+
 
 static void checkMatchRow(u8 whichRow, u8 color)
 {

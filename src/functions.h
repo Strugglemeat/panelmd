@@ -43,6 +43,10 @@ char debug_string[40] = "";
 
 u8 numColors=6;//if 6 it includes the dark blue tile
 
+u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at [1][1] for bottom left corner
+
+u8 timer=0;//global, not needed for both players
+
 typedef struct {
 Sprite* cursor;
 u16 cursorX,cursorY;//changed from u8 to u16 to accommodate larger playfield
@@ -69,9 +73,6 @@ u8 switchy;
 } Player;
 
 Player p1;
-
-u8 board[maxX+2][maxY+2];//6x12 playfield, with room around the sides. start at [1][1] for bottom left corner
-u8 timer=0;//global, not needed for both players
 
 static void clearGrid()//only called at initialization
 {
@@ -157,107 +158,70 @@ SPR_update();
 
 p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
 SPR_setVisibility(p1.switch1,HIDDEN);
-SPR_setPriorityAttribut(p1.switch1, TRUE);//because of hilight/shadow
+//SPR_setPriorityAttribut(p1.switch1, TRUE);//because of hilight/shadow
 p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
 SPR_setVisibility(p1.switch2,HIDDEN);
-SPR_setPriorityAttribut(p1.switch2, TRUE);//because of hilight/shadow
+//SPR_setPriorityAttribut(p1.switch2, TRUE);//because of hilight/shadow
 
 p1.flag_redraw=0;
 }
 
 static void drawTile(u8 x, u8 y, u8 color)
 {
+	u8 PRIORITY=1;
+
+	if(color>numColors)//shadow the tiles which are being destroyed
+		{
+			color-=6;
+			PRIORITY=0;
+		}
+	if(y>maxY)//shadow the new tiles which are coming up from the bottom
+		{
+			PRIORITY=0;
+		}
+
 	switch(color)
 	{//enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 		case Red:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color-1), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color-1), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color-1), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color-1), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color-1), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color-1), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color-1), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color-1), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Purple:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Yellow:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+1), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+1), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+1), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+1), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color+1), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color+1), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color+1), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color+1), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Green:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+2), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+2), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+2), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+2), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color+2), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color+2), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color+2), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color+2), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Blue:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+3), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+3), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+3), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+3), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color+3), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color+3), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color+3), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color+3), x+x+1, y+y+1, 1, 1);
 		break;
 
 		case Darkblue:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+color+4), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+1+color+4), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+12+color+4), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 1, FALSE, FALSE, tileIndex+13+color+4), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Red+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color-1-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color-1-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color-1-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color-1-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Purple+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Yellow+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+1-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+1-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+1-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+1-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Green+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+2-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+2-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+2-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+2-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Blue+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+3-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+3-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+3-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+3-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case Darkblue+6:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+color+4-6), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+1+color+4-6), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+12+color+4-6), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, tileIndex+13+color+4-6), x+x+1, y+y+1, 1, 1);
-		break;
-
-		case 255:
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x+1, y+y, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x, y+y+1, 1, 1);
-		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 0), x+x+1, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+color+4), x+x, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+1+color+4), x+x+1, y+y, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+12+color+4), x+x, y+y+1, 1, 1);
+		VDP_fillTileMapRect(BG_A, TILE_ATTR_FULL(PAL3, PRIORITY, FALSE, FALSE, tileIndex+13+color+4), x+x+1, y+y+1, 1, 1);
 		break;
 	}
 }
