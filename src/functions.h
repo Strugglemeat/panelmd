@@ -16,6 +16,7 @@ static void renderScene();
 static void connectedTilesChangeGraphic();
 static void destroyTiles();
 static void checkGeneratedNewRow();
+static void scrollUp();
 
 #define borderIndex 1
 #define tileIndex 5
@@ -137,6 +138,7 @@ clearGrid();
 
 insertInitialRowData();
 updateBackground();
+generateNewRow();
 
 SYS_enableInts();
 
@@ -232,7 +234,7 @@ static void updateBackground()
 	u8 iX,iY;
 
 	u8 yStart=1;//1 is the topmost row
-	u8 yEnd=maxY+1;//maxY+1 is the bottom row
+	u8 yEnd=maxY+2;//maxY+1 is the bottom row
 
 	for (iX=1;iX<maxX+1;iX++)
 		{
@@ -367,7 +369,8 @@ static void checkGeneratedNewRow()
 	}
 
 	if(checkVertFlag==1)generateNewRow();
-	else if(checkVertFlag==0)pushupRows();
+	else if(checkVertFlag==0)p1.flag_redraw=1;
+	//else if(checkVertFlag==0)pushupRows();
 }
 
 static void print_debug()

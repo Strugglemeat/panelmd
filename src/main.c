@@ -23,9 +23,10 @@ int main()
 	{
 		handleInput();
 		timer++;
+		if(scrolledAmount>0)scrollUp();
 		if(p1.redraw_delay>0)p1.redraw_delay--;
 		if(gravity_delay==1)doGravity();
-		if(gravity_delay>0)gravity_delay--;
+		else if(gravity_delay>0)gravity_delay--;
 		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
@@ -92,13 +93,6 @@ static void handleInput()
 		    }
    	}
 
-	if(p1.raiseDelay>0)p1.raiseDelay--;
-	else if (checkTopRow()==0 && p1.raiseDelay==0 && (value1 & BUTTON_B))
-	{
-		generateNewRow();
-		p1.raiseDelay=raiseDelayAmount;
-	}
-
 	if(((value1 & BUTTON_A) || value1 & BUTTON_C) && p1.hasSwitched==0)
 	{
 		//VDP_clearText(14,13,20);VDP_clearText(14,14,20);//clears the debug text for matches
@@ -131,20 +125,13 @@ static void handleInput()
 
 	if((!(value1 & BUTTON_A)) && (!(value1 & BUTTON_C))){p1.hasSwitched=0;}
 
-	//if(value1 & BUTTON_START)doGravity(0);//DEBUG
-	if(value1 & BUTTON_START)
+	if(p1.raiseDelay>0)p1.raiseDelay--;
+	else if (checkTopRow()==0 && p1.raiseDelay==0 && (value1 & BUTTON_B))
 	{
-		if(board[1][maxY+1]==0)generateNewRow();
-
-		VDP_setVerticalScroll(BG_A,scrollOffset += 1);
-		//VDP_setVerticalScrollVSync(BG_A,scrollOffset += 1);
-		if(scrollOffset >= 255) scrollOffset = 0;
-		scrolledAmount++;
-
-		p1.cursorY-=1;
-		SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-		SPR_update();
+		if(scrolledAmount==0)scrolledAmount=1;
+		p1.raiseDelay=raiseDelayAmount;
 	}
+
 }
 
 static void doGravity()//the parameter here should be the lowest (highest number) row of where the tile(s) landed
@@ -191,8 +178,6 @@ static void doGravity()//the parameter here should be the lowest (highest number
 			*/
 		}
 }
-
-
 
 static void checkMatchRow(u8 whichRow, u8 color)
 {
@@ -312,4 +297,26 @@ static void destroyTiles()
 		gravity_delay=GRAVITY_DELAY_AMOUNT;
 		//doGravity(0);
 	}
+}
+
+static void scrollUp()
+{
+		if(scrolledAmount<blocksize)
+		{
+			VDP_setVerticalScroll(BG_A,scrollOffset += 1);
+			//VDP_setVerticalScrollVSync(BG_A,scrollOffset += 1);
+			if(scrollOffset >= 255) scrollOffset = 0;
+			scrolledAmount++;
+/*
+			p1.cursorY-=1;
+			SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+			SPR_update();*/
+		}
+		else if(scrolledAmount>=blocksize)
+		{
+			pushupRows();
+			scrolledAmount=0;
+			generateNewRow();
+			VDP_setVerticalScroll(BG_A,scrollOffset -= blocksize);
+		}
 }
