@@ -1,4 +1,6 @@
-put p2's cursor on screen from start
+bugginess with quickly swapping
+---------
+make it so the cursors cannot overlap
 ---------
 integrate palette 2 for cursors and background
 -----
