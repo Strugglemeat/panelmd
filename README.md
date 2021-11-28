@@ -1,3 +1,11 @@
+put p2's cursor on screen from start
+---------
+integrate palette 2 for cursors and background
+-----
+cycle palette 2 to make background "animate"
+-----
+rise stack while match going off messes it up
+--------
 reduce gravity falling speed - introduce delay
 --------
 [graphical flourish]
@@ -9,11 +17,6 @@ chain definition - a falling piece is used in a combo
 --------
 fix the switchsprite wonkiness
 *do i need to create one at every swap?
---------
-[graphics]
-cursor should be animated - pulses (middle section only moves Y+/Y-, outer sections move both. they are all the same tile, flipped)
-++
-different cursor for player2
 --------
 [optimization]
 work on the redraw function to redraw less of the screen after gravity and any other times when it does a full screen redraw
@@ -45,7 +48,7 @@ music on/off
 --------
 palettes
 3-tiles (6x2 = 12, 3 for explosions, 1 for transparency)
-2-bg
+2-bg & cursors
 1-?
 0-?
 --------=
@@ -54,3 +57,9 @@ x? combo
 x? chain
 allclear
 allfull (no empty spaces)
+
+maybes:
+--------
+hori double pieces?
+--------
+puyo/pnickies-style blob matching graphics
