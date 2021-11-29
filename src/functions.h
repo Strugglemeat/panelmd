@@ -1,5 +1,4 @@
 static void drawBorder();
-static void handleInput();
 static void print_debug();
 static u8 randomRange(u8 rangeStart, u8 rangeEnd);
 static void updateBackground();
@@ -17,6 +16,8 @@ static void connectedTilesChangeGraphic();
 static void destroyTiles();
 static void checkGeneratedNewRow();
 static void scrollUp();
+static void animateCursor();
+
 
 #define borderIndex 1
 #define tileIndex 5
@@ -34,6 +35,9 @@ static void scrollUp();
 #define MaxPossibleCombo 16
 
 #define REDRAW_DELAY_AMOUNT 8
+
+u8 animateCursorTimer;
+#define CURSOR_ANIMATE_SPEED 20
 
 enum tile{Red=1, Purple=2, Yellow=3, Green=4, Blue=5, Darkblue=6};
 
@@ -71,6 +75,9 @@ u8 switchy;
 } Player;
 
 Player p1;
+Player p2;
+
+static void handleInputs(u16 buttons, Player* player);//function definition has to be after struct definition
 
 static void clearGrid()//only called at initialization
 {
@@ -139,30 +146,48 @@ generateNewRow();
 
 SYS_enableInts();
 
-SPR_init();
-p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
-SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+VDP_setHilightShadow(1);
 
 p1.xpos=1;
 p1.ypos=maxY;
-p1.cursorX=16+((p1.xpos-1)*blocksize)-2;
+
+p2.xpos=6;
+p2.ypos=6;
+
+SPR_init();
+
+//******BEGIN P1 SPRITE STUFF********
+p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
+SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+p1.cursorX=16+((p1.xpos-1)*blocksize)-4;
 p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
-
-VDP_setHilightShadow(1);
-
 SPR_setVisibility(p1.cursor,VISIBLE);
 SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
 SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-SPR_update();
 
 p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
 SPR_setVisibility(p1.switch1,HIDDEN);
-//SPR_setPriorityAttribut(p1.switch1, TRUE);//because of hilight/shadow
 p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
 SPR_setVisibility(p1.switch2,HIDDEN);
-//SPR_setPriorityAttribut(p1.switch2, TRUE);//because of hilight/shadow
+
+//******BEGIN P2 SPRITE STUFF********
+p2.cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
+SPR_setVisibility(p2.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+p2.cursorX=16+((p2.xpos-1)*blocksize)-4;
+p2.cursorY=16+((p2.ypos-1)*blocksize)-2;
+SPR_setVisibility(p2.cursor,VISIBLE);
+SPR_setPriorityAttribut(p2.cursor, TRUE);//because of hilight/shadow
+SPR_setPosition(p2.cursor,p2.cursorX,p2.cursorY);
+
+p2.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+SPR_setVisibility(p2.switch1,HIDDEN);
+p2.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+SPR_setVisibility(p2.switch2,HIDDEN);
+
+SPR_update();
 
 p1.flag_redraw=0;
+p2.flag_redraw=0;
 }
 
 static void drawTile(u8 x, u8 y, u8 color)
@@ -245,52 +270,7 @@ static void updateBackground()
 		}
 }
 
-static void renderScene()
-{
-	if(p1.flag_redraw==1)//redraw the entire scene
-	{
-		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
-		p1.flag_redraw=0;
-		updateBackground();
-	}
-	else if(p1.flag_redraw==2)//after a blank swap or regular swap
-	{
-		p1.switch1x=p1.cursorX+2;
-		p1.switchy=p1.cursorY+2;
-		p1.switch2x=p1.cursorX+16+2;
 
-		if(board[p1.xpos+1][p1.ypos]<=numColors)SPR_setFrame(p1.switch1, board[p1.xpos+1][p1.ypos]-1);
-		if(board[p1.xpos][p1.ypos]<=numColors)SPR_setFrame(p1.switch2, board[p1.xpos][p1.ypos]-1);
-
-		if(board[p1.xpos+1][p1.ypos]>0)SPR_setVisibility(p1.switch1,VISIBLE);
-
-		if(board[p1.xpos][p1.ypos]>0)SPR_setVisibility(p1.switch2,VISIBLE);
-
-		p1.flag_redraw=3;
-		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
-	}
-	else if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
-	{//putting it here removes the blinking effect on a swap with a blank tile
-		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-	}
-	else if(p1.flag_redraw==3 && p1.redraw_delay>0)
-	{
-		p1.switch1x+=2;
-		p1.switch2x-=2;
-		SPR_setPosition(p1.switch1,p1.switch1x,p1.switchy);
-		SPR_setPosition(p1.switch2,p1.switch2x,p1.switchy);
-		SPR_update();
-	}
-	else if(p1.flag_redraw==3 && p1.redraw_delay==0)
-	{
-		SPR_setVisibility(p1.switch1,HIDDEN);
-		SPR_setVisibility(p1.switch2,HIDDEN);
-		SPR_update();
-
-		p1.flag_redraw=0;
-		updateBackground();
-	}
-}
 
 static u8 checkTopRow()
 {
@@ -392,4 +372,109 @@ static void print_debug()
 	VDP_clearText(23,0,1);
 	sprintf(debug_string,"color:%d",board[p1.xpos][p1.ypos]);
 	VDP_drawText(debug_string,16,0);
+}
+
+static void renderScene()
+{
+	if(p1.flag_redraw==1 || p2.flag_redraw==1)//redraw the entire scene
+	{
+		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire board
+		p1.flag_redraw=0;
+		updateBackground();
+	}
+	else if(p1.flag_redraw==2)//after a blank swap or regular swap
+	{
+		p1.switch1x=p1.cursorX+2;
+		p1.switchy=p1.cursorY+2;
+		p1.switch2x=p1.cursorX+16+2;
+
+		if(board[p1.xpos+1][p1.ypos]<=numColors)SPR_setFrame(p1.switch1, board[p1.xpos+1][p1.ypos]-1);
+		if(board[p1.xpos][p1.ypos]<=numColors)SPR_setFrame(p1.switch2, board[p1.xpos][p1.ypos]-1);
+
+		if(board[p1.xpos+1][p1.ypos]>0)SPR_setVisibility(p1.switch1,VISIBLE);
+
+		if(board[p1.xpos][p1.ypos]>0)SPR_setVisibility(p1.switch2,VISIBLE);
+
+		p1.flag_redraw=3;
+		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
+	}
+	else if(p2.flag_redraw==2)//after a blank swap or regular swap
+	{
+		p2.switch1x=p2.cursorX+2;
+		p2.switchy=p2.cursorY+2;
+		p2.switch2x=p2.cursorX+16+2;
+
+		if(board[p2.xpos+1][p2.ypos]<=numColors)SPR_setFrame(p2.switch1, board[p2.xpos+1][p2.ypos]-1);
+		if(board[p2.xpos][p2.ypos]<=numColors)SPR_setFrame(p2.switch2, board[p2.xpos][p2.ypos]-1);
+
+		if(board[p2.xpos+1][p2.ypos]>0)SPR_setVisibility(p2.switch1,VISIBLE);
+
+		if(board[p2.xpos][p2.ypos]>0)SPR_setVisibility(p2.switch2,VISIBLE);
+
+		p2.flag_redraw=3;
+		p2.redraw_delay=REDRAW_DELAY_AMOUNT;
+	}
+	
+	if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
+	{//putting it here removes the blinking effect on a swap with a blank tile
+		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
+	}
+	
+	if(p1.flag_redraw==3 && p1.redraw_delay>0)//making this an else if was causing a crash
+	{
+		p1.switch1x+=2;
+		p1.switch2x-=2;
+		SPR_setPosition(p1.switch1,p1.switch1x,p1.switchy);
+		SPR_setPosition(p1.switch2,p1.switch2x,p1.switchy);
+		SPR_update();
+	}
+	else if(p1.flag_redraw==3 && p1.redraw_delay==0)
+	{
+		SPR_setVisibility(p1.switch1,HIDDEN);
+		SPR_setVisibility(p1.switch2,HIDDEN);
+		SPR_update();
+
+		p1.flag_redraw=0;
+		updateBackground();
+	}
+
+	if(p2.redraw_delay==REDRAW_DELAY_AMOUNT-1)
+	{//putting it here removes the blinking effect on a swap with a blank tile
+		VDP_clearTileMapRect(BG_A,p2.xpos+p2.xpos,p2.ypos+p2.ypos,4,2);
+	}
+	
+	if(p2.flag_redraw==3 && p2.redraw_delay>0)//making this an else if was causing a crash
+	{
+		p2.switch1x+=2;
+		p2.switch2x-=2;
+		SPR_setPosition(p2.switch1,p2.switch1x,p2.switchy);
+		SPR_setPosition(p2.switch2,p2.switch2x,p2.switchy);
+		SPR_update();
+	}
+	else if(p2.flag_redraw==3 && p2.redraw_delay==0)
+	{
+		SPR_setVisibility(p2.switch1,HIDDEN);
+		SPR_setVisibility(p2.switch2,HIDDEN);
+		SPR_update();
+
+		p2.flag_redraw=0;
+		updateBackground();
+	}
+}
+
+static void animateCursor()
+{
+	if (animateCursorTimer==CURSOR_ANIMATE_SPEED)
+		{
+			SPR_setFrame(p1.cursor, 1);
+			SPR_setFrame(p2.cursor, 1);
+			SPR_update();
+		}
+	if (animateCursorTimer==CURSOR_ANIMATE_SPEED+CURSOR_ANIMATE_SPEED)
+		{
+			SPR_setFrame(p1.cursor, 0);
+			SPR_setFrame(p2.cursor, 0);
+			SPR_update();
+			animateCursorTimer=0;
+		}
 }

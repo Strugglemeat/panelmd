@@ -17,121 +17,121 @@ u8 scrolledAmount=0;
 int main()
 {
 	initialize();
-	scrollOffset=p1.ypos-blocksize+2;
+	scrollOffset=maxY-blocksize+2;//this needs to be changed and/or put somewhere else
 
 	while(1)
 	{
-		handleInput();
+		handleInputs(JOY_readJoypad(JOY_1), &p1);
+		handleInputs(JOY_readJoypad(JOY_2), &p2);
 		timer++;
+		animateCursorTimer++;
 		if(scrolledAmount>0)scrollUp();
 		if(p1.redraw_delay>0)p1.redraw_delay--;
+		if(p2.redraw_delay>0)p2.redraw_delay--;
 		if(gravity_delay==1)doGravity();
 		else if(gravity_delay>0)gravity_delay--;
-		if(p1.destroyIndex!=0)connectedTilesChangeGraphic();
+		if(p1.destroyIndex!=0 || p2.destroyIndex!=0)connectedTilesChangeGraphic();
 		if(destroyTimer[0]!=0 || destroyTimer[1]!=0 || destroyTimer[2]!=0 || destroyTimer[3]!=0)destroyTiles();
 		SYS_doVBlankProcess();
-		if(p1.flag_redraw!=0)renderScene();
-		print_debug();
+		animateCursor();
+		if(p1.flag_redraw!=0 || p2.flag_redraw!=0)renderScene();
+		//print_debug();
 	}
 
 	return 0;
 }
 
-static void handleInput()
+static void handleInputs(u16 buttons, Player* player)
 {
-	u16 value1 = JOY_readJoypad(JOY_1);
+	if(buttons==player->lastDirInput && buttons!=0)player->lastDirInputHowMany++;//count for acceleration
+	else if(buttons!=player->lastDirInput){player->lastDirInputHowMany=0;player->acceleration=0;}//if changing directions
+	else if(buttons==0){player->lastDirInput=0;player->lastDirInputHowMany=0;player->acceleration=0;}//if no more dpad input
 
-	if(value1==p1.lastDirInput && value1!=0)p1.lastDirInputHowMany++;//count for acceleration
-	else if(value1!=p1.lastDirInput){p1.lastDirInputHowMany=0;p1.acceleration=0;}//if changing directions
-	else if(value1==0){p1.lastDirInput=0;p1.lastDirInputHowMany=0;p1.acceleration=0;}//if no more dpad input
+	if(player->lastDirInputHowMany%accelerationPace==0 && player->lastDirInputHowMany>accelerationPace)player->acceleration+=accelerationAmount;
+	if(player->acceleration>MAX_SPEEDUP)player->acceleration=MAX_SPEEDUP;
 
-	if(p1.lastDirInputHowMany%accelerationPace==0 && p1.lastDirInputHowMany>accelerationPace)p1.acceleration+=accelerationAmount;
-	if(p1.acceleration>MAX_SPEEDUP)p1.acceleration=MAX_SPEEDUP;
-
-	if(p1.moveDelay>0)p1.moveDelay--;
-	else if(p1.moveDelay==0)
+	if(player->moveDelay>0)player->moveDelay--;
+	else if(player->moveDelay==0)
 	{
-	    if ((value1 & BUTTON_LEFT) && p1.xpos>1)   
-		    {
-		    	p1.xpos--;
-		    	p1.cursorX-=blocksize;
 
-		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
-		    	p1.lastDirInput=value1;
-			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-				SPR_update();
-		    }
-	    if ((value1 & BUTTON_RIGHT) && p1.xpos < maxX-1)   
-		    {
-		    	p1.xpos++;
-		    	p1.cursorX+=blocksize;
-
-		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
-		    	p1.lastDirInput=value1;
-			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-				SPR_update();
-		    }
-	    if ((value1 & BUTTON_UP) && p1.ypos>1)      
-		    {
-			    p1.ypos--;
-			    p1.cursorY-=blocksize;
-
-			    p1.moveDelay=moveDelayAmt-p1.acceleration;
-			    p1.lastDirInput=value1;
-			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-				SPR_update();
-		    }//1,1 is the bottom left...
-	    if ((value1 & BUTTON_DOWN) && p1.ypos<maxY)    
-		    {
-		    	p1.ypos++;
-		    	p1.cursorY+=blocksize;
-
-		    	p1.moveDelay=moveDelayAmt-p1.acceleration;
-		    	p1.lastDirInput=value1;
-			    SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
-				SPR_update();
-		    }
-   	}
-
-	if(((value1 & BUTTON_A) || value1 & BUTTON_C) && p1.hasSwitched==0)
-	{
-		//VDP_clearText(14,13,20);VDP_clearText(14,14,20);//clears the debug text for matches
-
-		p1.hasSwitched=1;
-
-		u8 color1=0,color2=0;
-        color1=board[p1.xpos][p1.ypos];
-        color2=board[p1.xpos+1][p1.ypos];//this is to see if we swapped with an empty, to do gravity
-
-		if(color1<=numColors && color2<=numColors)
+		if ((buttons & BUTTON_UP) && player->ypos > 1)
 		{
-			board[p1.xpos][p1.ypos]=board[p1.xpos+1][p1.ypos];
-			board[p1.xpos+1][p1.ypos]=color1;
+			player->ypos--;
+		    player->cursorY-=blocksize;
 
-			p1.flag_redraw=2;
-			
-			checkMatchRow(p1.ypos,color1);
-			checkMatchRow(p1.ypos,color2);
-			checkMatchColumn(p1.xpos,color2);
-			checkMatchColumn(p1.xpos+1,color1);
+		    player->moveDelay=moveDelayAmt-player->acceleration;
+		    player->lastDirInput=buttons;
+		    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+			SPR_update();
 		}
+		if ((buttons & BUTTON_DOWN) && player->ypos < maxY)
+		    {
+		    	player->ypos++;
+		    	player->cursorY+=blocksize;
 
-		if(color1==0 || color2==0)//empty swap
-			{
-				//p1.flag_redraw=2;
-				gravity_delay=GRAVITY_DELAY_AMOUNT;
-			}
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				SPR_update();
+		    }
+		if ((buttons & BUTTON_LEFT) && player->xpos > 1)
+		    {
+		    	player->xpos--;
+		    	player->cursorX-=blocksize;
+
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				SPR_update();
+		    }
+	    if ((buttons & BUTTON_RIGHT) && player->xpos < maxX-1)
+		    {
+		    	player->xpos++;
+		    	player->cursorX+=blocksize;
+
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				SPR_update();
+		    }
 	}
 
-	if((!(value1 & BUTTON_A)) && (!(value1 & BUTTON_C))){p1.hasSwitched=0;}
+	if(((buttons & BUTTON_A) || buttons & BUTTON_C) && player->hasSwitched==0)
+		{
+			u8 color1=0,color2=0;
+	        color1=board[player->xpos][player->ypos];
+	        color2=board[player->xpos+1][player->ypos];//this is to see if we swapped with an empty, to do gravity
 
-	if(p1.raiseDelay>0)p1.raiseDelay--;
-	else if (checkTopRow()==0 && p1.raiseDelay==0 && (value1 & BUTTON_B))
+	        if(color1==0 && board[player->xpos+1][player->ypos+1]==0)return;//empty swap with nothing below
+	        if(color2==0 && board[player->xpos][player->ypos+1]==0)return;//empty swap with nothing below
+
+			if(color1<=numColors && color2<=numColors)//effect the swap
+				{
+					board[player->xpos][player->ypos]=board[player->xpos+1][player->ypos];
+					board[player->xpos+1][player->ypos]=color1;
+
+					checkMatchRow(player->ypos,color1);
+					checkMatchRow(player->ypos,color2);
+					checkMatchColumn(player->xpos,color2);
+					checkMatchColumn(player->xpos+1,color1);
+				}
+
+			if(color1==0 || color2==0)//empty swap
+				{
+					gravity_delay=GRAVITY_DELAY_AMOUNT;
+				}
+
+			player->hasSwitched=1;
+			player->flag_redraw=2;
+		}
+	else if((!(buttons & BUTTON_A)) && (!(buttons & BUTTON_C))){player->hasSwitched=0;}
+
+	if(player->raiseDelay>0)player->raiseDelay--;
+	else if (checkTopRow()==0 && player->raiseDelay==0 && (buttons & BUTTON_B))
 	{
 		if(scrolledAmount==0)scrolledAmount=1;
-		p1.raiseDelay=raiseDelayAmount;
+		player->raiseDelay=raiseDelayAmount;
 	}
-
 }
 
 static void doGravity()//the parameter here should be the lowest (highest number) row of where the tile(s) landed
@@ -177,6 +177,7 @@ static void doGravity()//the parameter here should be the lowest (highest number
 			VDP_drawText(debug_string,16,10);
 			*/
 		}
+
 }
 
 static void checkMatchRow(u8 whichRow, u8 color)
@@ -214,7 +215,7 @@ static void checkMatchRow(u8 whichRow, u8 color)
 	}
 }
 
-static void checkMatchColumn(u8 whichColumn, u8 color)//this is pulling colors from Y=13
+static void checkMatchColumn(u8 whichColumn, u8 color)
 {
 	u8 matchesVert=0,matchStartY=0,destroyFlag=0,incVar=0,checkYinc;
 
@@ -254,7 +255,7 @@ static void connectedTilesChangeGraphic()
 	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
 	//VDP_drawText(debug_string,16,13);
 
-	u8 debugDestroyCount=0;
+	u8 destroyCount=0;
 
 	u8 whichTimer=0;
 	while(destroyTimer[whichTimer]!=0)whichTimer++;	//find the first open timer (there are 4 total destroyTimer[4])
@@ -266,7 +267,7 @@ static void connectedTilesChangeGraphic()
 			board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic		
 			toDestroyX[whichTimer][p1.destroyIndex]=p1.destroyX[p1.destroyIndex];
 			toDestroyY[whichTimer][p1.destroyIndex]=p1.destroyY[p1.destroyIndex];
-			debugDestroyCount++;
+			destroyCount++;
 		}
 		p1.destroyIndex--;
 	}while(p1.destroyIndex>0);
@@ -274,7 +275,7 @@ static void connectedTilesChangeGraphic()
 	destroyTimer[whichTimer]=timer+destroyDelay;
 	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero
 
-	sprintf(debug_string,"combo:%d",debugDestroyCount);
+	sprintf(debug_string,"last combo:%d",destroyCount);
 	VDP_drawText(debug_string,26,0);
 }
 
