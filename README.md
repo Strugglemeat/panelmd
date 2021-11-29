@@ -1,3 +1,7 @@
+bug with swapping that makes all tiles disappear (only happened on fbneo?????)
+-------
+refactor renderScene() to work with both players
+--------
 bugginess with quickly swapping
 ---------
 make it so the cursors cannot overlap
@@ -59,6 +63,7 @@ x? combo
 x? chain
 allclear
 allfull (no empty spaces)
+destroy specific marked tiles (ala columns)
 
 maybes:
 --------
