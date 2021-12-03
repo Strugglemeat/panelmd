@@ -160,9 +160,8 @@ static void initialize()
 	clearGrid();
 
 	insertInitialRowData();
-		generateNewRow();
+	generateNewRow();
 	updateBackground();
-
 
 	SYS_enableInts();
 
@@ -171,14 +170,15 @@ static void initialize()
 	p1.xpos=1;
 	p1.ypos=maxY;
 
-	p2.xpos=6;
-	p2.ypos=maxY;
+	p2.xpos=1;
+	p2.ypos=1;
 
 	SPR_init();
 
+	//******BEGIN P1 SPRITE STUFF********
 	p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
 	SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
-	p1.cursorX=16+((p1.xpos-1)*blocksize)-2;
+	p1.cursorX=16+((p1.xpos-1)*blocksize)-4;
 	p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
 	SPR_setVisibility(p1.cursor,VISIBLE);
 	SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
@@ -189,9 +189,27 @@ static void initialize()
 	p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
 	SPR_setVisibility(p1.switch2,HIDDEN);
 
-	SPR_update();
+	SPR_setPriorityAttribut(p1.switch1, TRUE);
+	SPR_setPriorityAttribut(p1.switch2, TRUE);
 
-	p1.flag_redraw=0;
+	//******BEGIN P2 SPRITE STUFF********
+	p2.cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
+	SPR_setVisibility(p2.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+	p2.cursorX=16+((p2.xpos-1)*blocksize)-4;
+	p2.cursorY=16+((p2.ypos-1)*blocksize)-2;
+	SPR_setVisibility(p2.cursor,VISIBLE);
+	SPR_setPriorityAttribut(p2.cursor, TRUE);//because of hilight/shadow
+	SPR_setPosition(p2.cursor,p2.cursorX,p2.cursorY);
+
+	p2.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch1,HIDDEN);
+	p2.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch2,HIDDEN);
+
+	SPR_setPriorityAttribut(p2.switch1, TRUE);
+	SPR_setPriorityAttribut(p2.switch2, TRUE);
+
+	SPR_update();
 }
 
 static void drawTile(u8 x, u8 y, u8 color)
@@ -273,8 +291,6 @@ static void updateBackground()
 			}
 		}
 }
-
-
 
 static u8 checkTopRow()
 {
@@ -378,12 +394,13 @@ static void print_debug()
 	VDP_drawText(debug_string,16,0);
 }
 
-static void renderScene()
+static void renderScene()//needs to be refactored for both players
 {
-	if(p1.flag_redraw==1)//redraw the entire scene
+	if(p1.flag_redraw==1 || p2.flag_redraw==2)//redraw the entire scene
 	{
 		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
 		p1.flag_redraw=0;
+		p2.flag_redraw=0;
 		updateBackground();
 	}
 	else if(p1.flag_redraw==2)//after a blank swap or regular swap

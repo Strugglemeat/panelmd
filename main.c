@@ -44,7 +44,7 @@ int main()
 
 		animateCursor();
 
-		if(p1.flag_redraw!=0)renderScene();
+		if(p1.flag_redraw!=0 || p2.flag_redraw!=0)renderScene();
 
 		//print_debug();
 	}
@@ -203,7 +203,6 @@ static void doGravity()//the parameter here should be the lowest (highest number
 			VDP_drawText(debug_string,16,10);
 			*/
 		}
-
 }
 
 static void checkMatchRow(u8 whichRow, u8 color)
