@@ -1,4 +1,6 @@
-bug with swapping that makes all tiles disappear (only happened on fbneo?????)
+make pulling up a new row make it come even further up than needed and then fall back down with a slam 
+-------
+sprite-related bug with swapping that makes all tiles disappear
 -------
 refactor renderScene() to work with both players
 --------
@@ -6,8 +8,6 @@ bugginess with quickly swapping
 ---------
 make it so the cursors cannot overlap
 ---------
-integrate palette 2 for cursors and background
------
 cycle palette 2 to make background "animate"
 -----
 rise stack while match going off messes it up
