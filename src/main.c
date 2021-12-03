@@ -44,9 +44,10 @@ int main()
 
 		animateCursor();
 
-		if(p1.flag_redraw!=0 || p2.flag_redraw!=0)renderScene();
+		if(p1.flag_redraw!=0 || p2.flag_redraw!=0 || p1.redraw_delay>0 || p2.redraw_delay>0)renderScene();
+		//if(p1.redraw_delay>0)renderScene();
 
-		//print_debug();
+		print_debug();
 	}
 
 	return 0;
