@@ -18,9 +18,8 @@ static void checkGeneratedNewRow();
 static void scrollUp();
 static void animateCursor();
 
-
-#define borderIndex 1
-#define tileIndex 5
+#define borderIndex 25
+#define tileIndex 1
 
 #define maxX 18//6 for regular, 18 max
 #define maxY 12
@@ -94,17 +93,34 @@ static void clearGrid()//only called at initialization
 static void drawBorder()//only called at initialization
 {
 	u8 iX,iY;
-	for(iX=0;iX<40;iX+=2)//top and bottom rows
+	for(iX=2;iX<38;iX+=2)//top and bottom rows
 	{
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), iX, 0, 2, 2);
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), iX, 26, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+12), iX, 26, 2, 2);
 	}
 
 	for(iY=2;iY<25;iY+=2)//left and right sides, inner walls
 	{
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 0, iY, 2, 2);
-		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), 38, iY, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+4), 0, iY, 2, 2);
+		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+4), 38, iY, 2, 2);
 	}
+
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+8), 0, 0, 2, 2);
+
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, TRUE, borderIndex+9), 38, 0, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, TRUE, borderIndex+8), 39, 0, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, TRUE, borderIndex+11), 38, 1, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, TRUE, borderIndex+10), 39, 1, 1, 1);
+
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, TRUE, borderIndex+8), 39, 27, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, TRUE, borderIndex+9), 38, 27, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, TRUE, borderIndex+10), 39, 26, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, TRUE, borderIndex+11), 38, 26, 1, 1);
+
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, FALSE, borderIndex+8), 0, 27, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, FALSE, borderIndex+9), 1, 27, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, FALSE, borderIndex+10), 0, 26, 1, 1);
+	VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, TRUE, FALSE, borderIndex+11), 1, 26, 1, 1);
 }
 
 static void insertInitialRowData()//only called at initialization
@@ -120,74 +136,80 @@ static void insertInitialRowData()//only called at initialization
 
 static void initialize()
 {
-SYS_disableInts();
+	SYS_disableInts();
 
-VDP_setScreenWidth320();
-VDP_setScreenHeight224();
-VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
-VDP_setPalette(PAL1, cursor.palette->data);
-VDP_setTextPlane(BG_B);
-VDP_setScrollingMode(HSCROLL_PLANE , VSCROLL_PLANE);
+	VDP_setScreenWidth320();
+	VDP_setScreenHeight224();
+	VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
+	//VDP_setPalette(PAL1, cursor.palette->data);
+	VDP_setTextPlane(BG_B);
+	VDP_setScrollingMode(HSCROLL_PLANE , VSCROLL_PLANE);
 
-//border
-VDP_setPalette(PAL2, bgtile.palette->data);
-VDP_loadTileSet(bgtile.tileset,borderIndex,DMA);
-drawBorder();
+	//border
+	VDP_setPalette(PAL2, cursor.palette->data);
+	VDP_loadTileSet(bgtilevert.tileset,borderIndex,CPU);
+	VDP_loadTileSet(bgtilehori.tileset,borderIndex+4,CPU);
+	VDP_loadTileSet(bgtilecorner.tileset,borderIndex+8,CPU);
+	VDP_loadTileSet(bgtilebottom.tileset,borderIndex+12,CPU);
+	drawBorder();
 
-//tiles
-VDP_setPalette(PAL3, alltiles.palette->data);
-VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
+	//tiles
+	VDP_setPalette(PAL3, alltiles.palette->data);
+	VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
 
-clearGrid();
+	clearGrid();
 
-insertInitialRowData();
-updateBackground();
-generateNewRow();
+	insertInitialRowData();
+	generateNewRow();
+	updateBackground();
 
-SYS_enableInts();
+	SYS_enableInts();
 
-VDP_setHilightShadow(1);
+	VDP_setHilightShadow(1);
 
-p1.xpos=1;
-p1.ypos=maxY;
+	p1.xpos=1;
+	p1.ypos=maxY;
 
-p2.xpos=6;
-p2.ypos=6;
+	p2.xpos=1;
+	p2.ypos=1;
 
-SPR_init();
+	SPR_init();
 
-//******BEGIN P1 SPRITE STUFF********
-p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
-SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
-p1.cursorX=16+((p1.xpos-1)*blocksize)-4;
-p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
-SPR_setVisibility(p1.cursor,VISIBLE);
-SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
-SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+	//******BEGIN P1 SPRITE STUFF********
+	p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL2,0,FALSE,FALSE));//changed from pal1 to pal2
+	SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+	p1.cursorX=16+((p1.xpos-1)*blocksize)-4;
+	p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
+	SPR_setVisibility(p1.cursor,VISIBLE);
+	SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
+	SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
 
-p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-SPR_setVisibility(p1.switch1,HIDDEN);
-p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-SPR_setVisibility(p1.switch2,HIDDEN);
+	p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p1.switch1,HIDDEN);
+	p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p1.switch2,HIDDEN);
 
-//******BEGIN P2 SPRITE STUFF********
-p2.cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
-SPR_setVisibility(p2.cursor,HIDDEN);//make it hidden while doing loading/init stuff
-p2.cursorX=16+((p2.xpos-1)*blocksize)-4;
-p2.cursorY=16+((p2.ypos-1)*blocksize)-2;
-SPR_setVisibility(p2.cursor,VISIBLE);
-SPR_setPriorityAttribut(p2.cursor, TRUE);//because of hilight/shadow
-SPR_setPosition(p2.cursor,p2.cursorX,p2.cursorY);
+	SPR_setPriorityAttribut(p1.switch1, TRUE);
+	SPR_setPriorityAttribut(p1.switch2, TRUE);
 
-p2.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-SPR_setVisibility(p2.switch1,HIDDEN);
-p2.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-SPR_setVisibility(p2.switch2,HIDDEN);
+	//******BEGIN P2 SPRITE STUFF********
+	p2.cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL2,0,FALSE,FALSE));//changed from pal1 to pal2
+	SPR_setVisibility(p2.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+	p2.cursorX=16+((p2.xpos-1)*blocksize)-4;
+	p2.cursorY=16+((p2.ypos-1)*blocksize)-2;
+	SPR_setVisibility(p2.cursor,VISIBLE);
+	SPR_setPriorityAttribut(p2.cursor, TRUE);//because of hilight/shadow
+	SPR_setPosition(p2.cursor,p2.cursorX,p2.cursorY);
 
-SPR_update();
+	p2.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch1,HIDDEN);
+	p2.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch2,HIDDEN);
 
-p1.flag_redraw=0;
-p2.flag_redraw=0;
+	SPR_setPriorityAttribut(p2.switch1, TRUE);
+	SPR_setPriorityAttribut(p2.switch2, TRUE);
+
+	SPR_update();
 }
 
 static void drawTile(u8 x, u8 y, u8 color)
@@ -269,8 +291,6 @@ static void updateBackground()
 			}
 		}
 }
-
-
 
 static u8 checkTopRow()
 {
@@ -374,12 +394,13 @@ static void print_debug()
 	VDP_drawText(debug_string,16,0);
 }
 
-static void renderScene()
+static void renderScene()//needs to be refactored for both players
 {
-	if(p1.flag_redraw==1 || p2.flag_redraw==1)//redraw the entire scene
+	if(p1.flag_redraw==1 || p2.flag_redraw==2)//redraw the entire scene
 	{
-		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire board
+		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
 		p1.flag_redraw=0;
+		p2.flag_redraw=0;
 		updateBackground();
 	}
 	else if(p1.flag_redraw==2)//after a blank swap or regular swap
@@ -398,24 +419,7 @@ static void renderScene()
 		p1.flag_redraw=3;
 		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
 	}
-	else if(p2.flag_redraw==2)//after a blank swap or regular swap
-	{
-		p2.switch1x=p2.cursorX+2;
-		p2.switchy=p2.cursorY+2;
-		p2.switch2x=p2.cursorX+16+2;
-
-		if(board[p2.xpos+1][p2.ypos]<=numColors)SPR_setFrame(p2.switch1, board[p2.xpos+1][p2.ypos]-1);
-		if(board[p2.xpos][p2.ypos]<=numColors)SPR_setFrame(p2.switch2, board[p2.xpos][p2.ypos]-1);
-
-		if(board[p2.xpos+1][p2.ypos]>0)SPR_setVisibility(p2.switch1,VISIBLE);
-
-		if(board[p2.xpos][p2.ypos]>0)SPR_setVisibility(p2.switch2,VISIBLE);
-
-		p2.flag_redraw=3;
-		p2.redraw_delay=REDRAW_DELAY_AMOUNT;
-	}
-	
-	if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
+	else if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
 	{//putting it here removes the blinking effect on a swap with a blank tile
 		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
 	}
@@ -437,29 +441,6 @@ static void renderScene()
 		p1.flag_redraw=0;
 		updateBackground();
 	}
-
-	if(p2.redraw_delay==REDRAW_DELAY_AMOUNT-1)
-	{//putting it here removes the blinking effect on a swap with a blank tile
-		VDP_clearTileMapRect(BG_A,p2.xpos+p2.xpos,p2.ypos+p2.ypos,4,2);
-	}
-	
-	if(p2.flag_redraw==3 && p2.redraw_delay>0)//making this an else if was causing a crash
-	{
-		p2.switch1x+=2;
-		p2.switch2x-=2;
-		SPR_setPosition(p2.switch1,p2.switch1x,p2.switchy);
-		SPR_setPosition(p2.switch2,p2.switch2x,p2.switchy);
-		SPR_update();
-	}
-	else if(p2.flag_redraw==3 && p2.redraw_delay==0)
-	{
-		SPR_setVisibility(p2.switch1,HIDDEN);
-		SPR_setVisibility(p2.switch2,HIDDEN);
-		SPR_update();
-
-		p2.flag_redraw=0;
-		updateBackground();
-	}
 }
 
 static void animateCursor()
@@ -467,13 +448,11 @@ static void animateCursor()
 	if (animateCursorTimer==CURSOR_ANIMATE_SPEED)
 		{
 			SPR_setFrame(p1.cursor, 1);
-			SPR_setFrame(p2.cursor, 1);
 			SPR_update();
 		}
 	if (animateCursorTimer==CURSOR_ANIMATE_SPEED+CURSOR_ANIMATE_SPEED)
 		{
 			SPR_setFrame(p1.cursor, 0);
-			SPR_setFrame(p2.cursor, 0);
 			SPR_update();
 			animateCursorTimer=0;
 		}
