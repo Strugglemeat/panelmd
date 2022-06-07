@@ -376,10 +376,9 @@ static void checkGeneratedNewRow()
 
 static void renderScene()//needs to be refactored for both players
 {
-	if(p1.flag_redraw==1 || p2.flag_redraw==2)//redraw the entire scene
+	if(p1.flag_redraw==1 || p2.flag_redraw==1)//redraw the entire scene
 	{
 		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
-		//VDP_clearTileMapRect(BG_A,p1.cursorX,p1.cursorY,p1.cursorX+2,p1.cursorY+2);
 		p1.flag_redraw=0;
 		p2.flag_redraw=0;
 		updateBackground();
@@ -516,8 +515,6 @@ static void handleInputs(u16 buttons, Player* player)
 					checkMatchColumn(player->xpos,color2);
 					checkMatchColumn(player->xpos+1,color1);
 
-					//checkMatchRow(u8 column, u8 row, u8 color1, u8 color2)
-					//checkMatchRow(player->xpos,player->ypos,color1,color2);
 					checkMatchRow(player->ypos,color1);
 					checkMatchRow(player->ypos,color2);
 
