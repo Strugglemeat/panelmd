@@ -9,7 +9,6 @@ static void pushupRows();
 static u8 checkTopRow();
 static void doGravity();
 static void clearGrid();
-static void checkMatchRow(u8 whichRow, u8 color);
 static void checkMatchColumn(u8 whichColumn, u8 color);
 static void renderScene();
 static void connectedTilesChangeGraphic();
@@ -17,6 +16,8 @@ static void destroyTiles();
 static void checkGeneratedNewRow();
 static void scrollUp();
 static void animateCursor();
+//static void checkMatchRow(u8 column, u8 row, u8 color1, u8 color2);
+static void checkMatchRow(u8 row, u8 color);
 
 #define borderIndex 25
 #define tileIndex 1
@@ -76,6 +77,22 @@ u8 switchy;
 Player p1;
 Player p2;
 
+u8 gravity_delay;
+#define GRAVITY_DELAY_AMOUNT 16
+
+//u8 whichTimer=0;
+#define MAX_NUMBER_TIMERS 8
+u8 destroyTimer[MAX_NUMBER_TIMERS];//# timers (max 2 per player conns at any one time),16 tiles per conn, X and Y
+u8 toDestroyX[4][17];
+u8 toDestroyY[4][17];
+
+#define destroyDelay 320
+
+u8 scrollOffset=maxY-blocksize+2;
+u8 scrolledAmount=0;
+
+u8 scrollUpDelay=0;
+
 static void handleInputs(u16 buttons, Player* player);//function definition has to be after struct definition
 
 static void clearGrid()//only called at initialization
@@ -92,13 +109,14 @@ static void clearGrid()//only called at initialization
 
 static void drawBorder()//only called at initialization
 {
-	for(u8 iX=2;iX<38;iX+=2)//top and bottom rows
+	u8 iX,iY;
+	for(iX=2;iX<38;iX+=2)//top and bottom rows
 	{
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex), iX, 0, 2, 2);
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+12), iX, 26, 2, 2);
 	}
 
-	for(u8 iY=2;iY<25;iY+=2)//left and right sides, inner walls
+	for(iY=2;iY<25;iY+=2)//left and right sides, inner walls
 	{
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+4), 0, iY, 2, 2);
 		VDP_fillTileMapRectInc(BG_B, TILE_ATTR_FULL(PAL2, 1, FALSE, FALSE, borderIndex+4), 38, iY, 2, 2);
@@ -124,33 +142,13 @@ static void drawBorder()//only called at initialization
 
 static void insertInitialRowData()//only called at initialization
 {
-	//board[6][maxY-2]=randomRange(1,numColors);
-	board[6][maxY-1]=randomRange(1,2);
+	board[6][maxY-2]=randomRange(1,numColors);
+	board[6][maxY-1]=randomRange(1,numColors);
 	board[2][maxY]=randomRange(1,numColors);
 	board[3][maxY]=randomRange(1,numColors);
 	board[4][maxY]=randomRange(1,numColors);
 	board[5][maxY]=randomRange(1,numColors);
-	board[6][maxY]=randomRange(1,1);
-}
-
-static void initPlayerSprites(Player* player)
-{
-	if(player==&p1)player->cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL2,0,FALSE,FALSE));//changed from pal1 to pal2
-	else if(player==&p2)player->cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL2,0,FALSE,FALSE));//changed from pal1 to pal2
-	SPR_setVisibility(player->cursor,HIDDEN);//make it hidden while doing loading/init stuff
-	player->cursorX=16+((player->xpos-1)*blocksize)-4;
-	player->cursorY=16+((player->ypos-1)*blocksize)-2;
-	SPR_setVisibility(player->cursor,VISIBLE);
-	SPR_setPriorityAttribut(player->cursor, TRUE);//because of hilight/shadow
-	SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
-
-	player->switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-	SPR_setVisibility(player->switch1,HIDDEN);
-	player->switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
-	SPR_setVisibility(player->switch2,HIDDEN);
-
-	SPR_setPriorityAttribut(player->switch1, TRUE);
-	SPR_setPriorityAttribut(player->switch2, TRUE);
+	board[6][maxY]=randomRange(1,numColors);
 }
 
 static void initialize()
@@ -159,13 +157,13 @@ static void initialize()
 
 	VDP_setScreenWidth320();
 	VDP_setScreenHeight224();
-	VDP_setHilightShadow(1);
 	VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
+	VDP_setPalette(PAL1, cursor.palette->data);
 	VDP_setTextPlane(BG_B);
 	VDP_setScrollingMode(HSCROLL_PLANE , VSCROLL_PLANE);
 
 	//border
-	VDP_setPalette(PAL2, cursor.palette->data);
+	VDP_setPalette(PAL2, bgtilevert.palette->data);
 	VDP_loadTileSet(bgtilevert.tileset,borderIndex,CPU);
 	VDP_loadTileSet(bgtilehori.tileset,borderIndex+4,CPU);
 	VDP_loadTileSet(bgtilecorner.tileset,borderIndex+8,CPU);
@@ -177,22 +175,58 @@ static void initialize()
 	VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
 
 	clearGrid();
+
 	insertInitialRowData();
 	generateNewRow();
 	updateBackground();
 
 	SYS_enableInts();
 
+	VDP_setHilightShadow(1);
+
 	p1.xpos=1;
 	p1.ypos=maxY;
 
-	p2.xpos=1;
+	p2.xpos=maxX-1;
 	p2.ypos=1;
 
 	SPR_init();
-	initPlayerSprites(&p1);
-	initPlayerSprites(&p2);
-	SPR_update();
+
+	//******BEGIN P1 SPRITE STUFF********
+	p1.cursor = SPR_addSprite(&cursor,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
+	SPR_setVisibility(p1.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+	p1.cursorX=16+((p1.xpos-1)*blocksize)-4;
+	p1.cursorY=16+((p1.ypos-1)*blocksize)-2;
+	SPR_setVisibility(p1.cursor,VISIBLE);
+	SPR_setPriorityAttribut(p1.cursor, TRUE);//because of hilight/shadow
+	SPR_setPosition(p1.cursor,p1.cursorX,p1.cursorY);
+
+	p1.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p1.switch1,HIDDEN);
+	p1.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p1.switch2,HIDDEN);
+
+	SPR_setPriorityAttribut(p1.switch1, TRUE);
+	SPR_setPriorityAttribut(p1.switch2, TRUE);
+
+	//******BEGIN P2 SPRITE STUFF********
+	p2.cursor = SPR_addSprite(&cursor2,0,0,TILE_ATTR(PAL1,0,FALSE,FALSE));
+	SPR_setVisibility(p2.cursor,HIDDEN);//make it hidden while doing loading/init stuff
+	p2.cursorX=16+((p2.xpos-1)*blocksize)-4;
+	p2.cursorY=16+((p2.ypos-1)*blocksize)-2;
+	SPR_setVisibility(p2.cursor,VISIBLE);
+	SPR_setPriorityAttribut(p2.cursor, TRUE);//because of hilight/shadow
+	SPR_setPosition(p2.cursor,p2.cursorX,p2.cursorY);
+
+	p2.switch1 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch1,HIDDEN);
+	p2.switch2 = SPR_addSprite(&sprite_tiles,0,0,TILE_ATTR(PAL3,0,FALSE,FALSE));
+	SPR_setVisibility(p2.switch2,HIDDEN);
+
+	SPR_setPriorityAttribut(p2.switch1, TRUE);
+	SPR_setPriorityAttribut(p2.switch2, TRUE);
+
+	//SPR_update();
 }
 
 static void drawTile(u8 x, u8 y, u8 color)
@@ -205,7 +239,7 @@ static void drawTile(u8 x, u8 y, u8 color)
 			PRIORITY=0;
 		}
 	if(y>maxY)//shadow the new tiles which are coming up from the bottom
-		{//if we don't do this, the tiles draw over top of the bottom row
+		{
 			PRIORITY=0;
 		}
 
@@ -288,19 +322,6 @@ static u8 checkTopRow()
 	else return 0;
 }
 
-static void pushupRows()
-{
-	for(u8 yPos=1;yPos<maxY+1;yPos++)
-	{
-		for(u8 xPos=1;xPos<maxX+1;xPos++)
-		{
-			board[xPos][yPos]=board[xPos][yPos+1];
-		}
-	}
-
-	p1.flag_redraw=1;
-}
-
 static u8 randomRange(u8 rangeStart, u8 rangeEnd)
 {
 	return (random() % (rangeEnd + 1 - rangeStart)) + rangeStart;
@@ -353,40 +374,17 @@ static void checkGeneratedNewRow()
 	//else if(checkVertFlag==0)pushupRows();
 }
 
-static void print_debug()
-{
-	sprintf(debug_string,"FPS:%ld", SYS_getFPS());VDP_drawText(debug_string,34,0);
-/*
-	if(SYS_getFPS()<60)
-	{
-		sprintf(debug_string,"FPS:%ld", SYS_getFPS());
-		VDP_drawText(debug_string,34,1);
-	}
-	else VDP_clearText(34,1,6);
-
-	if(p1.xpos<10)VDP_clearText(6,0,1);
-	sprintf(debug_string,"Xpos:%d",p1.xpos);
-	VDP_drawText(debug_string,0,0);
-
-	if(p1.ypos<10)VDP_clearText(14,0,1);
-	sprintf(debug_string,"Ypos:%d",p1.ypos);
-	VDP_drawText(debug_string,8,0);
-
-	VDP_clearText(23,0,1);
-	sprintf(debug_string,"color:%d",board[p1.xpos][p1.ypos]);
-	VDP_drawText(debug_string,16,0);*/
-}
-
 static void renderScene()//needs to be refactored for both players
 {
-	if(p1.flag_redraw==1 || p2.flag_redraw==1)//redraw the entire scene
+	if(p1.flag_redraw==1 || p2.flag_redraw==2)//redraw the entire scene
 	{
 		VDP_clearTileMapRect(BG_A,2,2,maxX+maxX,maxY+maxY);//clears the entire P1 board
+		//VDP_clearTileMapRect(BG_A,p1.cursorX,p1.cursorY,p1.cursorX+2,p1.cursorY+2);
 		p1.flag_redraw=0;
 		p2.flag_redraw=0;
 		updateBackground();
 	}
-	else if(p1.flag_redraw==2)//after any swap (blank or regular)
+	else if(p1.flag_redraw==2)//after a blank swap or regular swap
 	{
 		p1.switch1x=p1.cursorX+2;
 		p1.switchy=p1.cursorY+2;
@@ -401,28 +399,25 @@ static void renderScene()//needs to be refactored for both players
 
 		p1.flag_redraw=3;
 		p1.redraw_delay=REDRAW_DELAY_AMOUNT;
-		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-	}/*
+	}
 	else if(p1.redraw_delay==REDRAW_DELAY_AMOUNT-1)
 	{//putting it here removes the blinking effect on a swap with a blank tile
 		VDP_clearTileMapRect(BG_A,p1.xpos+p1.xpos,p1.ypos+p1.ypos,4,2);
-	}*/
+	}
 	
-	//if(p1.flag_redraw==3 && p1.redraw_delay>0)//making this an else if was causing a crash
-	if(p1.redraw_delay>0)//making this an else if was causing a crash
+	if(p1.flag_redraw==3 && p1.redraw_delay>0)//making this an else if was causing a crash
 	{
-		p1.switch1x+=1;
-		p1.switch2x-=1;
+		p1.switch1x+=2;
+		p1.switch2x-=2;
 		SPR_setPosition(p1.switch1,p1.switch1x,p1.switchy);
 		SPR_setPosition(p1.switch2,p1.switch2x,p1.switchy);
-		SPR_update();
+		//SPR_update();
 	}
-	//else if(p1.flag_redraw==3 && p1.redraw_delay==0)
-	else if(p1.redraw_delay==0)
+	else if(p1.flag_redraw==3 && p1.redraw_delay==0)
 	{
 		SPR_setVisibility(p1.switch1,HIDDEN);
 		SPR_setVisibility(p1.switch2,HIDDEN);
-		SPR_update();
+		//SPR_update();
 
 		p1.flag_redraw=0;
 		updateBackground();
@@ -434,14 +429,187 @@ static void animateCursor()
 	if (animateCursorTimer==CURSOR_ANIMATE_SPEED)
 		{
 			SPR_setFrame(p1.cursor, 1);
-			SPR_setFrame(p2.cursor, 1);
-			SPR_update();
+			//SPR_update();
 		}
 	if (animateCursorTimer==CURSOR_ANIMATE_SPEED+CURSOR_ANIMATE_SPEED)
 		{
 			SPR_setFrame(p1.cursor, 0);
-			SPR_setFrame(p2.cursor, 0);
-			SPR_update();
+			//SPR_update();
 			animateCursorTimer=0;
 		}
+}
+
+static void handleInputs(u16 buttons, Player* player)
+{
+	if(buttons==player->lastDirInput && buttons!=0)player->lastDirInputHowMany++;//count for acceleration
+	else if(buttons!=player->lastDirInput){player->lastDirInputHowMany=0;player->acceleration=0;}//if changing directions
+	else if(buttons==0){player->lastDirInput=0;player->lastDirInputHowMany=0;player->acceleration=0;}//if no more dpad input
+
+	if(player->lastDirInputHowMany%accelerationPace==0 && player->lastDirInputHowMany>accelerationPace)player->acceleration+=accelerationAmount;
+	if(player->acceleration>MAX_SPEEDUP)player->acceleration=MAX_SPEEDUP;
+
+	if(player->moveDelay>0)player->moveDelay--;
+	else if(player->moveDelay==0)
+	{
+
+		if ((buttons & BUTTON_UP) && player->ypos > 1)
+		{
+			player->ypos--;
+		    player->cursorY-=blocksize;
+
+		    player->moveDelay=moveDelayAmt-player->acceleration;
+		    player->lastDirInput=buttons;
+		    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+			//SPR_update();
+		}
+		if ((buttons & BUTTON_DOWN) && player->ypos < maxY)
+		    {
+		    	player->ypos++;
+		    	player->cursorY+=blocksize;
+
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				//SPR_update();
+		    }
+		if ((buttons & BUTTON_LEFT) && player->xpos > 1)
+		    {
+		    	player->xpos--;
+		    	player->cursorX-=blocksize;
+
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				//SPR_update();
+		    }
+	    if ((buttons & BUTTON_RIGHT) && player->xpos < maxX-1)
+		    {
+		    	player->xpos++;
+		    	player->cursorX+=blocksize;
+
+		    	player->moveDelay=moveDelayAmt-player->acceleration;
+		    	player->lastDirInput=buttons;
+			    SPR_setPosition(player->cursor,player->cursorX,player->cursorY);
+				//SPR_update();
+		    }
+	}
+
+	if(((buttons & BUTTON_A) || buttons & BUTTON_C) && player->hasSwitched==0 && board[player->xpos][player->ypos]<=numColors && board[player->xpos+1][player->ypos]<=numColors)
+		{
+			u8 color1=0,color2=0;
+	        color1=board[player->xpos][player->ypos];
+	        color2=board[player->xpos+1][player->ypos];//this is to see if we swapped with an empty, to do gravity
+
+	        if((color1==0 && board[player->xpos+1][player->ypos+1]==0) || (color2==0 && board[player->xpos][player->ypos+1]==0))
+		        {//empty swap with nothing below
+			        SPR_setVisibility(player->switch1,HIDDEN);
+					SPR_setVisibility(player->switch2,HIDDEN);
+					//SPR_update();
+			        return;
+		        }
+
+			if(color1<=numColors && color2<=numColors)//effect the swap
+				{
+					board[player->xpos][player->ypos]=board[player->xpos+1][player->ypos];
+					board[player->xpos+1][player->ypos]=color1;
+
+					checkMatchColumn(player->xpos,color2);
+					checkMatchColumn(player->xpos+1,color1);
+
+					//checkMatchRow(u8 column, u8 row, u8 color1, u8 color2)
+					//checkMatchRow(player->xpos,player->ypos,color1,color2);
+					checkMatchRow(player->ypos,color1);
+					checkMatchRow(player->ypos,color2);
+
+					//player->flag_redraw=2;
+				}
+			//else if(color1>numColors || color2>numColors)return;//if one of the tiles in the cursor is disappearing, we can't use it
+
+			if(color1==0 || color2==0)//empty swap
+				{
+					gravity_delay=GRAVITY_DELAY_AMOUNT;
+				}
+
+			player->hasSwitched=1;
+			player->flag_redraw=2;
+		}
+	else if((!(buttons & BUTTON_A)) && (!(buttons & BUTTON_C))){player->hasSwitched=0;}
+
+	if((!(buttons & BUTTON_A)) && (!(buttons & BUTTON_C))){player->hasSwitched=0;}
+
+	if(player->raiseDelay>0)player->raiseDelay--;
+	else if ((buttons & BUTTON_B) && checkTopRow()==0 && player->raiseDelay==0)
+	{
+		if(scrolledAmount==0)scrolledAmount=1;
+		player->raiseDelay=raiseDelayAmount;
+	}
+	
+	if ((buttons & BUTTON_B) && player->raiseDelay!=0)
+	{
+		player->raiseDelay=0;
+	}
+
+	if (buttons & BUTTON_START) 
+	{
+		player->flag_redraw=1;
+	}
+}
+
+static void pushupRows()
+{
+	for(u8 yPos=1;yPos<maxY+1;yPos++)
+	{
+		for(u8 xPos=1;xPos<maxX+1;xPos++)
+		{
+			board[xPos][yPos]=board[xPos][yPos+1];
+		}
+	}
+
+//we also need to pushup inside each of the destruction arrays
+//board[x][y]>6
+//toDestroyY[whichTimer][p1.destroyIndex]=p1.destroyY[p1.destroyIndex];
+
+	for(u8 i=0;i<MAX_NUMBER_TIMERS;i++)
+	{
+		if(destroyTimer[i]!=0)
+		{
+			for(u8 y=0;y<MaxPossibleCombo;y++)
+			{
+				toDestroyY[i][y]=toDestroyY[i][y]-1;
+			}
+		}
+	}
+
+	p1.flag_redraw=1;
+}
+
+static void connectedTilesChangeGraphic()
+{
+	//sprintf(debug_string,"%d@%d,%d",p1.destroyIndex,p1.destroyX[p1.destroyIndex],p1.destroyY[p1.destroyIndex]);
+	//VDP_drawText(debug_string,16,13);
+
+	u8 debugDestroyCount=0;
+
+	//whichTimer++;
+	//if(whichTimer>MAX_NUMBER_TIMERS)whichTimer=0;
+	u8 whichTimer=0;
+	while(destroyTimer[whichTimer]!=0)whichTimer++;	//find the first open timer
+	
+	do
+	{
+		if(board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]<=numColors)
+		{//otherwise, it'll +6 the same tile twice if it's involved in both a hori and vert match
+			board[p1.destroyX[p1.destroyIndex]][p1.destroyY[p1.destroyIndex]]+=6;//changes the graphic
+			toDestroyX[whichTimer][p1.destroyIndex]=p1.destroyX[p1.destroyIndex];
+			toDestroyY[whichTimer][p1.destroyIndex]=p1.destroyY[p1.destroyIndex];
+			debugDestroyCount++;
+		}
+		p1.destroyIndex--;
+	}while(p1.destroyIndex>0);
+
+	destroyTimer[whichTimer]=timer+destroyDelay;
+	if(destroyTimer[whichTimer]==0)destroyTimer[whichTimer]++;//dont let it be zero  - WHAT IF there's a timer in use at 1 already?
+
+	//sprintf(debug_string,"combo:%d",debugDestroyCount);
+	//VDP_drawText(debug_string,26,0);
 }
