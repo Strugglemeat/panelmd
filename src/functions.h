@@ -158,12 +158,12 @@ static void initialize()
 	VDP_setScreenWidth320();
 	VDP_setScreenHeight224();
 	VDP_loadFontData(tileset_Font_Namco.tiles, 96, CPU);
-	VDP_setPalette(PAL1, cursor.palette->data);
+	PAL_setPalette(PAL1, cursor.palette->data, DMA);
 	VDP_setTextPlane(BG_B);
 	VDP_setScrollingMode(HSCROLL_PLANE , VSCROLL_PLANE);
 
 	//border
-	VDP_setPalette(PAL2, bgtilevert.palette->data);
+	PAL_setPalette(PAL2, bgtilevert.palette->data, DMA);
 	VDP_loadTileSet(bgtilevert.tileset,borderIndex,CPU);
 	VDP_loadTileSet(bgtilehori.tileset,borderIndex+4,CPU);
 	VDP_loadTileSet(bgtilecorner.tileset,borderIndex+8,CPU);
@@ -171,7 +171,7 @@ static void initialize()
 	drawBorder();
 
 	//tiles
-	VDP_setPalette(PAL3, alltiles.palette->data);
+	PAL_setPalette(PAL3, alltiles.palette->data, DMA);
 	VDP_loadTileSet(alltiles.tileset,tileIndex,DMA);
 
 	clearGrid();
